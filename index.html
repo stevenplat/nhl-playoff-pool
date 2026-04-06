@@ -41,17 +41,26 @@
     ::-webkit-scrollbar-thumb { background: var(--bg5); border-radius: 3px; }
 
     /* ── NAV ── */
-    .nav { background: rgba(10,10,15,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 0 28px; display: flex; align-items: center; justify-content: space-between; height: 64px; position: sticky; top: 0; z-index: 100; }
-    .nav-logo { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.3px; background: var(--grad-hero); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; display: flex; align-items: center; gap: 8px; }
-    .nav-logo-icon { font-size: 1.4rem; -webkit-text-fill-color: initial; }
+    .nav { background: rgba(10,10,15,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 0 20px; display: flex; align-items: center; justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 100; }
     .nav-links { display: flex; gap: 2px; }
     .nav-btn { background: none; border: none; color: var(--text2); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.87rem; font-weight: 500; transition: all .2s; font-family: inherit; }
     .nav-btn:hover { background: var(--bg3); color: var(--text); }
     .nav-btn.active { background: var(--bg4); color: var(--text); font-weight: 600; }
-    .nav-right { display: flex; align-items: center; gap: 12px; }
-    .nav-pill { background: var(--bg3); border: 1px solid var(--border2); border-radius: 20px; padding: 6px 14px; font-size: 0.82rem; color: var(--text2); font-weight: 500; }
+    .nav-right { display: flex; align-items: center; gap: 10px; position: relative; }
+    .nav-pill { background: var(--bg3); border: 1px solid var(--border2); border-radius: 20px; padding: 6px 12px 6px 8px; font-size: 0.82rem; color: var(--text2); font-weight: 500; display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; transition: background .2s; }
+    .nav-pill:hover { background: var(--bg4); }
+    .nav-pill-chevron { font-size: 0.6rem; opacity: 0.5; margin-left: 2px; }
     .btn-logout { background: none; border: 1px solid var(--border2); color: var(--text3); padding: 7px 16px; border-radius: 8px; cursor: pointer; font-size: 0.82rem; font-weight: 500; font-family: inherit; transition: all .2s; }
     .btn-logout:hover { border-color: var(--red); color: var(--red); }
+    /* Profile submenu */
+    .profile-submenu { position: absolute; top: calc(100% + 10px); right: 0; background: rgba(18,18,28,0.95); backdrop-filter: blur(32px) saturate(200%); -webkit-backdrop-filter: blur(32px) saturate(200%); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 6px; min-width: 190px; z-index: 300; box-shadow: 0 12px 48px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08); }
+    .profile-submenu-btn { display: flex; align-items: center; gap: 10px; width: 100%; background: none; border: none; color: var(--text2); padding: 10px 14px; border-radius: 10px; cursor: pointer; font-size: 0.85rem; font-weight: 500; font-family: inherit; transition: all .15s; text-align: left; }
+    .profile-submenu-btn:hover { background: rgba(255,255,255,0.08); color: var(--text); }
+    .profile-submenu-btn.danger:hover { background: rgba(244,63,94,0.12); color: var(--red); }
+    .profile-submenu-divider { height: 1px; background: var(--border); margin: 4px 6px; }
+    .submenu-overlay { position: fixed; inset: 0; z-index: 200; }
+    /* Bottom tab bar */
+    .bottom-tab-bar { display: none; }
 
     /* ── PAGE ── */
     .page { max-width: 1080px; margin: 0 auto; padding: 36px 24px 80px; }
@@ -241,9 +250,54 @@
       .pool-grid { grid-template-columns: 1fr; }
       .grid-2 { grid-template-columns: 1fr; }
       .nav-links { display: none; }
-      .page { padding: 20px 14px 80px; }
+      .nav-desktop-actions { display: none; }
+      .page { padding: 20px 14px 110px; }
       .login-box { padding: 32px 24px; }
       .hero-score { font-size: 2.2rem; }
+      /* Liquid glass bottom tab bar */
+      .bottom-tab-bar {
+        display: flex;
+        position: fixed;
+        bottom: 18px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(255,255,255,0.07);
+        backdrop-filter: blur(40px) saturate(180%);
+        -webkit-backdrop-filter: blur(40px) saturate(180%);
+        border: 1px solid rgba(255,255,255,0.13);
+        border-radius: 30px;
+        padding: 5px;
+        gap: 2px;
+        z-index: 90;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.06) inset, 0 -1px 0 rgba(0,0,0,0.3) inset;
+      }
+      .tab-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        padding: 8px 13px;
+        border-radius: 25px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+        background: none;
+        color: rgba(255,255,255,0.4);
+        font-size: 0.6rem;
+        font-weight: 600;
+        font-family: inherit;
+        white-space: nowrap;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+        min-width: 54px;
+      }
+      .tab-item.active {
+        background: rgba(255,255,255,0.13);
+        color: #fff;
+        box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset, 0 2px 12px rgba(0,0,0,0.25);
+      }
+      .tab-icon { font-size: 1.25rem; line-height: 1; position: relative; }
+      .tab-dot { position: absolute; top: -2px; right: -4px; width: 7px; height: 7px; border-radius: 50%; background: var(--gold); border: 1.5px solid rgba(10,10,15,0.9); }
     }
   </style>
 </head>
@@ -754,27 +808,79 @@ function ProfileSelectPage({users, onSelect, onSignOut, onAdd}) {
 
 // ── NAVBAR ──
 function NavBar({user,view,setView,onSwitchProfile,onSignOut,needsPicks}){
+  const [menuOpen,setMenuOpen]=useState(false);
   const memberNav=[
-    {key:'pool',label:'My Pool'},
-    {key:'picks',label:<>My Bracket{needsPicks&&<span style={{display:'inline-block',width:7,height:7,borderRadius:'50%',background:'var(--gold)',marginLeft:6,verticalAlign:'middle',flexShrink:0}}/>}</>},
+    {key:'pool',label:'My Pool',icon:'🏆'},
+    {key:'picks',label:'My Bracket',icon:'🏒',dot:needsPicks},
   ];
-  const adminNav=user.is_admin?[{key:'manage-users',label:'Members'},{key:'bracket-setup',label:'Bracket Setup'},{key:'results',label:'Results'}]:[];
+  const adminNav=user.is_admin?[
+    {key:'manage-users',label:'Members',icon:'👥'},
+    {key:'bracket-setup',label:'Setup',icon:'⚙️'},
+    {key:'results',label:'Results',icon:'📋'},
+  ]:[];
+  const allTabs=[...memberNav,...adminNav];
   const hasAvatar=user.avatar!=null;
+  const avatarEl=(size)=>(
+    <div style={{width:size,height:size,borderRadius:'50%',background:hasAvatar?AVATAR_LIST[user.avatar]?.bg:'var(--purple)',overflow:'hidden',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:hasAvatar?0:`${size*0.4}px`,fontWeight:800,color:'#fff'}}>
+      {hasAvatar?<AvatarSvg id={user.avatar}/>:user.username[0]?.toUpperCase()}
+    </div>
+  );
   return(
-    <nav className="nav">
-      <div className="nav-logo"><span className="nav-logo-icon">🏒</span>NHL Pool</div>
-      <div className="nav-links">{[...memberNav,...adminNav].map(n=><button key={n.key} className={`nav-btn${view===n.key?' active':''}`} onClick={()=>setView(n.key)}>{n.label}</button>)}</div>
-      <div className="nav-right">
-        <div className="nav-pill" style={{display:'flex',alignItems:'center',gap:8}}>
-          <div style={{width:22,height:22,borderRadius:'50%',background:hasAvatar?AVATAR_LIST[user.avatar]?.bg:'var(--purple)',overflow:'hidden',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:hasAvatar?0:'0.65rem',fontWeight:800,color:'#fff'}}>
-            {hasAvatar?<AvatarSvg id={user.avatar}/>:user.username[0]?.toUpperCase()}
-          </div>
-          {user.username}{user.is_admin?' · Admin':''}
+    <>
+      <nav className="nav">
+        <div className="nav-links">
+          {allTabs.map(n=>(
+            <button key={n.key} className={`nav-btn${view===n.key?' active':''}`} onClick={()=>setView(n.key)}>
+              {n.label}{n.dot&&<span style={{display:'inline-block',width:7,height:7,borderRadius:'50%',background:'var(--gold)',marginLeft:6,verticalAlign:'middle'}}/>}
+            </button>
+          ))}
         </div>
-        <button className="btn-logout" onClick={onSwitchProfile}>Switch</button>
-        <button className="btn-logout" onClick={onSignOut} style={{borderColor:'rgba(244,63,94,0.3)',color:'var(--text3)'}}>Sign Out</button>
+        <div className="nav-right">
+          <div className="nav-pill" onClick={()=>setMenuOpen(o=>!o)}>
+            {avatarEl(22)}
+            <span>{user.username}{user.is_admin?' · Admin':''}</span>
+            <span className="nav-pill-chevron">{menuOpen?'▲':'▼'}</span>
+          </div>
+          <div className="nav-desktop-actions" style={{display:'flex',gap:8}}>
+            <button className="btn-logout" onClick={onSwitchProfile}>Switch</button>
+            <button className="btn-logout" onClick={onSignOut} style={{borderColor:'rgba(244,63,94,0.3)',color:'var(--text3)'}}>Sign Out</button>
+          </div>
+          {menuOpen&&(
+            <>
+              <div className="submenu-overlay" onClick={()=>setMenuOpen(false)}/>
+              <div className="profile-submenu">
+                <div style={{padding:'8px 14px 10px',borderBottom:'1px solid var(--border)',marginBottom:4}}>
+                  <div style={{display:'flex',alignItems:'center',gap:10}}>
+                    {avatarEl(32)}
+                    <div>
+                      <div style={{fontSize:'0.88rem',fontWeight:700,color:'var(--text)'}}>{user.username}</div>
+                      <div style={{fontSize:'0.72rem',color:'var(--text3)'}}>{user.is_admin?'Admin':'Player'}</div>
+                    </div>
+                  </div>
+                </div>
+                <button className="profile-submenu-btn" onClick={()=>{onSwitchProfile();setMenuOpen(false);}}>
+                  <span>👤</span> Switch Profile
+                </button>
+                <button className="profile-submenu-btn danger" onClick={()=>{onSignOut();setMenuOpen(false);}}>
+                  <span>🚪</span> Sign Out
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </nav>
+      <div className="bottom-tab-bar">
+        {allTabs.map(n=>(
+          <button key={n.key} className={`tab-item${view===n.key?' active':''}`} onClick={()=>setView(n.key)}>
+            <span className="tab-icon">
+              {n.icon}
+              {n.dot&&<span className="tab-dot"/>}
+            </span>
+            <span>{n.label}</span>
+          </button>
+        ))}
       </div>
-    </nav>
+    </>
   );
 }
 
