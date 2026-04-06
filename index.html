@@ -229,7 +229,16 @@
     .avatar-picker-opt.chosen { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(124,92,252,0.35); }
     .avatar-swatch { width: 52px; height: 52px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; }
 
+    /* ── POOL SELECT ── */
+    .pool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 660px; width: 100%; position: relative; z-index: 2; }
+    .pool-card { background: rgba(8,8,16,0.72); backdrop-filter: blur(28px); border: 1px solid rgba(255,255,255,0.09); border-radius: 24px; padding: 32px 28px; display: flex; flex-direction: column; gap: 20px; transition: border-color .2s, box-shadow .2s; }
+    .pool-card:focus-within { border-color: var(--pool-accent,var(--purple)); box-shadow: 0 0 0 3px rgba(var(--pool-accent-rgb,124 92 252)/.12); }
+    .pool-card-header { text-align: center; }
+    .pool-card-icon { font-size: 2.8rem; margin-bottom: 10px; }
+    .pool-card-name { font-size: 1.15rem; font-weight: 800; color: var(--text); letter-spacing: -0.3px; }
+
     @media(max-width:700px) {
+      .pool-grid { grid-template-columns: 1fr; }
       .grid-2 { grid-template-columns: 1fr; }
       .nav-links { display: none; }
       .page { padding: 20px 14px 80px; }
@@ -252,6 +261,16 @@ const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// ── POOLS ──
+// SQL migration (run once in Supabase SQL editor):
+//   ALTER TABLE pool_users  ADD COLUMN pool_id text DEFAULT 'plat_family';
+//   ALTER TABLE pool_config ADD COLUMN pool_id text DEFAULT 'plat_family';
+//   ALTER TABLE pool_config ADD CONSTRAINT pool_config_pool_id_key UNIQUE (pool_id);
+const POOLS = [
+  { id:'plat_family', name:'Plat Family',  password:'stevenisthebest', icon:'👨‍👩‍👧', color:'#7c5cfc', grad:'linear-gradient(135deg,#7c5cfc,#3b82f6)' },
+  { id:'the_boys',    name:'The Boys',      password:'boobs',           icon:'🍺',     color:'#f59e0b', grad:'linear-gradient(135deg,#f59e0b,#ef4444)' },
+];
+
 // ── CONSTANTS ──
 const ROUND_PTS    = [10, 25, 50, 100];
 const SERIES_BONUS = 3;
@@ -265,14 +284,20 @@ const DEFAULT_ROUND1 = [
 const DEFAULT_RESULTS = { r1:Array(8).fill(null), r2:Array(4).fill(null), r3:Array(2).fill(null), r4:Array(1).fill(null) };
 
 // ── SUPABASE DATA LAYER ──
-async function dbLoadAll() {
-  const [usersRes, configRes] = await Promise.all([
-    sb.from('pool_users').select('*').order('created_at'),
-    sb.from('pool_config').select('*').eq('id', 1).single()
+async function dbLoadAll(poolId) {
+  const [usersRes, configRes, adminRes] = await Promise.all([
+    sb.from('pool_users').select('*').eq('pool_id', poolId).order('created_at'),
+    sb.from('pool_config').select('*').eq('pool_id', poolId).maybeSingle(),
+    sb.from('pool_users').select('*').eq('id', 'admin').maybeSingle()
   ]);
-  const users   = usersRes.data  || [];
-  const config  = configRes.data || { id:1, season:'2026', status:'setup', round1: DEFAULT_ROUND1, results: DEFAULT_RESULTS };
+  let users = usersRes.data || [];
+  // Always include the shared admin profile, injected at the top
+  if (adminRes.data && !users.find(u => u.id === 'admin')) {
+    users = [adminRes.data, ...users];
+  }
+  const config = configRes.data || { pool_id:poolId, season:'2026', status:'setup', round1: DEFAULT_ROUND1, results: DEFAULT_RESULTS };
   return {
+    poolId,
     users,
     bracket: {
       season:  config.season  || '2026',
@@ -283,15 +308,15 @@ async function dbLoadAll() {
   };
 }
 
-async function dbSaveConfig(bracket) {
+async function dbSaveConfig(bracket, poolId) {
   await sb.from('pool_config').upsert({
-    id: 1,
-    season:  bracket.season,
-    status:  bracket.status,
-    round1:  bracket.round1,
-    results: bracket.results,
+    pool_id:  poolId,
+    season:   bracket.season,
+    status:   bracket.status,
+    round1:   bracket.round1,
+    results:  bracket.results,
     updated_at: new Date().toISOString()
-  });
+  }, { onConflict: 'pool_id' });
 }
 
 async function dbSavePicks(userId, picks) {
@@ -300,7 +325,17 @@ async function dbSavePicks(userId, picks) {
 
 async function dbCreateUser(user) {
   const { data, error } = await sb.from('pool_users').insert([user]).select().single();
-  if (error) throw error;
+  if (error) {
+    const msg = error.message?.toLowerCase() || '';
+    if (msg.includes('avatar') || msg.includes('pool_id')) {
+      // Retry without columns that may not exist yet in the schema
+      const { avatar, pool_id, ...stripped } = user;
+      const { data: d2, error: e2 } = await sb.from('pool_users').insert([stripped]).select().single();
+      if (e2) throw e2;
+      return d2;
+    }
+    throw error;
+  }
   return data;
 }
 
@@ -570,35 +605,55 @@ function AvatarSvg({id}) {
   return s[id] ?? s[0];
 }
 
-// ── LOGIN ──
-function LoginPage({onLogin, users}) {
-  const [pw,setPw]=useState('');
-  const [err,setErr]=useState('');const [loading,setLoading]=useState(false);
-  function submit(e){
-    e.preventDefault(); setErr(''); setLoading(true);
-    try {
-      const admin = users.find(u => u.is_admin);
-      if (!admin || pw !== admin.password) { setErr('Incorrect pool password.'); setLoading(false); return; }
-      onLogin();
-    } catch(e){ setErr('Something went wrong.'); }
-    finally { setLoading(false); }
+// ── POOL SELECT (login) ──
+function PoolSelectPage({onLogin}) {
+  const [pws,setPws]=useState({plat_family:'',the_boys:''});
+  const [errs,setErrs]=useState({});
+  const [entering,setEntering]=useState(null);
+
+  function attempt(pool,e){
+    e.preventDefault();
+    const pw=pws[pool.id];
+    if(pw===pool.password){ setEntering(pool.id); onLogin(pool); }
+    else setErrs(p=>({...p,[pool.id]:'Wrong password — try again'}));
   }
+
   return(
     <div className="login-wrap">
       <div className="login-blob login-blob-1"/><div className="login-blob login-blob-2"/><div className="login-blob login-blob-3"/>
       <div className="login-grain"/>
-      <div className="login-box">
-        <div className="login-logo">
-          <h1>NHL Playoff Pool</h1>
-          <p className="login-tagline"><strong>Pick the champ. Crush the competition.</strong><br/>Remind everyone about it forever. 🏒</p>
-          <p className="login-sub">Enter the pool password to continue</p>
+      <div style={{position:'relative',zIndex:2,width:'100%',display:'flex',flexDirection:'column',alignItems:'center',padding:'0 20px'}}>
+        <div style={{textAlign:'center',marginBottom:40}}>
+          <div style={{fontSize:'2.8rem',marginBottom:12}}>🏒</div>
+          <h1 style={{fontSize:'2rem',fontWeight:800,letterSpacing:'-1px',background:'linear-gradient(135deg,#fff,rgba(255,255,255,.7))',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>NHL Playoff Pool</h1>
+          <p style={{color:'var(--text2)',marginTop:8,fontSize:'0.95rem'}}>Pick the champ. Crush the competition.</p>
         </div>
-        {err&&<Alert type="danger">{err}</Alert>}
-        <form onSubmit={submit}>
-          <div className="form-group"><label className="form-label">Pool Password</label><input className="form-input" type="password" value={pw} onChange={e=>setPw(e.target.value)} autoFocus placeholder="Enter pool password" autoComplete="current-password" /></div>
-          <button className="btn btn-gold btn-full" type="submit" disabled={loading}>{loading?'Entering…':'Enter Pool'}</button>
-        </form>
-        <div className="login-hint">Contact your pool commissioner for the password</div>
+        <div className="pool-grid">
+          {POOLS.map(pool=>(
+            <div key={pool.id} className="pool-card" style={{'--pool-accent':pool.color}}>
+              <div className="pool-card-header">
+                <div className="pool-card-icon">{pool.icon}</div>
+                <div className="pool-card-name">{pool.name}</div>
+              </div>
+              {errs[pool.id]&&<Alert type="danger">{errs[pool.id]}</Alert>}
+              <form onSubmit={e=>attempt(pool,e)}>
+                <div className="form-group" style={{marginBottom:14}}>
+                  <input
+                    className="form-input"
+                    type="password"
+                    placeholder="Password"
+                    value={pws[pool.id]}
+                    onChange={e=>{setPws(p=>({...p,[pool.id]:e.target.value}));setErrs(p=>({...p,[pool.id]:''}));}}
+                    autoComplete="off"
+                  />
+                </div>
+                <button type="submit" className="btn btn-full" style={{background:pool.grad,color:'#fff',borderRadius:12,justifyContent:'center'}} disabled={entering===pool.id}>
+                  {entering===pool.id?'Entering…':'Enter Pool'}
+                </button>
+              </form>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -888,7 +943,7 @@ function ManageUsersPage({data,onRefresh}){
     if(data.users.some(u=>u.username.toLowerCase()===form.username.toLowerCase().trim()&&(modal==='add'||u.id!==modal.editUser?.id))){setErr('Username taken.');return;}
     setSaving(true);setErr('');
     try{
-      if(modal==='add'){await dbCreateUser({id:uid(),username:form.username.trim(),password:form.password,is_admin:form.is_admin,picks:null,created_at:new Date().toISOString()});setMsg(`"${form.username.trim()}" created.`);}
+      if(modal==='add'){await dbCreateUser({id:uid(),username:form.username.trim(),password:form.password,is_admin:form.is_admin,picks:null,pool_id:data.poolId,created_at:new Date().toISOString()});setMsg(`"${form.username.trim()}" created.`);}
       else{await dbUpdateUser(modal.editUser.id,{username:form.username.trim(),password:form.password,is_admin:form.is_admin});setMsg(`"${form.username.trim()}" updated.`);}
       await onRefresh();setModal(null);setTimeout(()=>setMsg(''),3000);
     }catch(e){setErr('Error: '+e.message);}finally{setSaving(false);}
@@ -933,7 +988,7 @@ function BracketSetupPage({data,onRefresh}){
   const [bracket,setBracket]=useState(data.bracket);const [msg,setMsg]=useState('');const [msgType,setMsgType]=useState('success');
   const [saving,setSaving]=useState(false);const [importing,setImporting]=useState(false);
   function setTeam(idx,field,val){setBracket(p=>{const r1=[...p.round1];r1[idx]={...r1[idx],[field]:val};return{...p,round1:r1};});}
-  async function handleSave(){setSaving(true);await dbSaveConfig(bracket);await onRefresh();setSaving(false);setMsg('Bracket saved!');setMsgType('success');setTimeout(()=>setMsg(''),3000);}
+  async function handleSave(){setSaving(true);await dbSaveConfig(bracket,data.poolId);await onRefresh();setSaving(false);setMsg('Bracket saved!');setMsgType('success');setTimeout(()=>setMsg(''),3000);}
   async function handleImportNHL(){
     setImporting(true);setMsg('');
     try{
@@ -978,7 +1033,7 @@ function ResultsPage({data,onRefresh}){
   const [saving,setSaving]=useState(false);const [syncing,setSyncing]=useState(false);
   const {bracket}=data;
   function setResult(round,idx,field,val){setResults(p=>{const n={...p,[round]:[...p[round]]};n[round][idx]={...(n[round][idx]||{}),[field]:field==='length'?parseInt(val)||null:val};return n;});}
-  async function handleSave(){setSaving(true);await dbSaveConfig({...bracket,results});await onRefresh();setSaving(false);setMsg('Results saved! Scores updated.');setMsgType('success');setTimeout(()=>setMsg(''),3000);}
+  async function handleSave(){setSaving(true);await dbSaveConfig({...bracket,results},data.poolId);await onRefresh();setSaving(false);setMsg('Results saved! Scores updated.');setMsgType('success');setTimeout(()=>setMsg(''),3000);}
   async function handleSyncNHL(){
     setSyncing(true);setMsg('');
     try{
@@ -1023,15 +1078,15 @@ function ChangePasswordModal({user,onSave,onClose}){
 
 // ── APP ROOT ──
 function App(){
-  const [appState,setAppState]=useState('loading'); // 'loading'|'unconfigured'|'ready'
+  const [appState,setAppState]=useState('checking'); // 'checking'|'unconfigured'|'ready'
   const [data,setData]=useState(null);
-  const [poolAuthed,setPoolAuthed]=useState(false);
+  const [currentPool,setCurrentPool]=useState(null);
   const [currentUser,setCurrentUser]=useState(null);
   const [view,setView]=useState('pool');
 
-  async function loadData(){
+  async function loadData(poolId){
     try{
-      const d = await dbLoadAll();
+      const d = await dbLoadAll(poolId);
       setData(d);
       return d;
     }catch(e){ console.error(e); return null; }
@@ -1041,21 +1096,22 @@ function App(){
     if(SUPABASE_URL==='YOUR_SUPABASE_URL'||SUPABASE_KEY==='YOUR_SUPABASE_ANON_KEY'){
       setAppState('unconfigured'); return;
     }
-    loadData().then(d=>{
-      if(d) setAppState('ready');
-      else setAppState('unconfigured');
-    });
+    setAppState('ready');
   },[]);
 
+  async function handleLogin(pool){
+    setCurrentPool(pool);
+    await loadData(pool.id);
+  }
+
   async function handleRefresh(){
-    const d = await loadData();
+    if(!currentPool) return;
+    const d = await loadData(currentPool.id);
     if(d && currentUser){
       const refreshedUser = d.users.find(u=>u.id===currentUser.id);
       if(refreshedUser) setCurrentUser(refreshedUser);
     }
   }
-
-  function handleLogin(){ setPoolAuthed(true); }
 
   function handleProfileSelect(user){
     const needsPicks = !user.picks && data?.bracket?.status === 'open';
@@ -1065,11 +1121,11 @@ function App(){
 
   function handleSwitchProfile(){ setCurrentUser(null); }
 
-  function handleSignOut(){ setPoolAuthed(false); setCurrentUser(null); }
+  function handleSignOut(){ setCurrentPool(null); setCurrentUser(null); setData(null); }
 
   async function handleAddProfile(userData){
-    const created = await dbCreateUser(userData);
-    await loadData();
+    const created = await dbCreateUser({...userData, pool_id: currentPool.id});
+    await loadData(currentPool.id);
     return created;
   }
 
@@ -1079,10 +1135,11 @@ function App(){
     setView('pool');
   }
 
-  if(appState==='loading') return <Spinner message="Connecting to database…"/>;
+  if(appState==='checking') return <Spinner message="Connecting to database…"/>;
   if(appState==='unconfigured') return <NotConfigured/>;
-  if(!poolAuthed) return <LoginPage onLogin={handleLogin} users={data?.users||[]}/>;
-  if(!currentUser) return <ProfileSelectPage users={data?.users||[]} onSelect={handleProfileSelect} onSignOut={handleSignOut} onAdd={handleAddProfile}/>;
+  if(!currentPool) return <PoolSelectPage onLogin={handleLogin}/>;
+  if(!data) return <Spinner message="Loading pool…"/>;
+  if(!currentUser) return <ProfileSelectPage users={data.users||[]} onSelect={handleProfileSelect} onSignOut={handleSignOut} onAdd={handleAddProfile}/>;
 
   const liveUser = data?.users?.find(u=>u.id===currentUser.id) || currentUser;
   const needsPicks = !liveUser.picks && data?.bracket?.status === 'open';
