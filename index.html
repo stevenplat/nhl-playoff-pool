@@ -205,6 +205,30 @@
     .spinner { width: 36px; height: 36px; border: 3px solid var(--border2); border-top-color: var(--purple); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto; }
     .loading-screen { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: var(--bg); color: var(--text2); font-size: 0.9rem; }
 
+    /* ── PROFILE SELECT ── */
+    .profile-wrap { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; position: relative; overflow: hidden; background: #04040a; }
+    .profile-header { text-align: center; margin-bottom: 48px; position: relative; z-index: 2; }
+    .profile-header h1 { font-size: 2rem; font-weight: 800; letter-spacing: -1px; background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.75) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 8px; }
+    .profile-header p { color: var(--text2); font-size: 1rem; font-weight: 500; }
+    .profile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 16px; max-width: 700px; width: 100%; position: relative; z-index: 2; }
+    .profile-card { background: rgba(8,8,16,0.72); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.09); border-radius: 20px; padding: 28px 16px 22px; display: flex; flex-direction: column; align-items: center; gap: 12px; cursor: pointer; transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease; text-align: center; }
+    .profile-card:hover { transform: translateY(-6px); border-color: var(--purple); box-shadow: 0 16px 40px rgba(124,92,252,0.25); }
+    .profile-avatar { width: 68px; height: 68px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: #fff; flex-shrink: 0; }
+    .profile-name { font-weight: 700; color: var(--text); font-size: 0.9rem; word-break: break-word; line-height: 1.3; }
+    .profile-admin-badge { font-size: 0.68rem; padding: 2px 9px; border-radius: 20px; background: rgba(124,92,252,0.2); color: #a78bfa; font-weight: 700; border: 1px solid rgba(124,92,252,0.3); }
+    .profile-exit { position: relative; z-index: 2; margin-top: 44px; background: none; border: none; color: var(--text3); font-size: 0.83rem; cursor: pointer; font-family: inherit; font-weight: 500; transition: color .2s; padding: 0; }
+    .profile-exit:hover { color: var(--red); }
+    .profile-add-card { background: rgba(8,8,16,0.4); backdrop-filter: blur(20px); border: 2px dashed rgba(255,255,255,0.12); border-radius: 20px; padding: 28px 16px 22px; display: flex; flex-direction: column; align-items: center; gap: 12px; cursor: pointer; transition: all 0.18s ease; text-align: center; }
+    .profile-add-card:hover { border-color: var(--purple); background: rgba(124,92,252,0.08); transform: translateY(-6px); }
+    .profile-add-icon { width: 68px; height: 68px; border-radius: 50%; background: rgba(255,255,255,0.05); border: 2px dashed rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; font-size: 2rem; line-height: 1; color: rgba(255,255,255,0.35); flex-shrink: 0; }
+    .profile-add-label { font-weight: 600; color: var(--text3); font-size: 0.88rem; }
+    /* ── AVATAR PICKER ── */
+    .avatar-picker-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 10px 0 6px; }
+    .avatar-picker-opt { border: 2px solid transparent; border-radius: 50%; cursor: pointer; padding: 3px; background: none; transition: all .15s; display: flex; align-items: center; justify-content: center; }
+    .avatar-picker-opt:hover { border-color: var(--border2); transform: scale(1.1); }
+    .avatar-picker-opt.chosen { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(124,92,252,0.35); }
+    .avatar-swatch { width: 52px; height: 52px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+
     @media(max-width:700px) {
       .grid-2 { grid-template-columns: 1fr; }
       .nav-links { display: none; }
@@ -289,6 +313,60 @@ async function dbDeleteUser(id) {
   await sb.from('pool_users').delete().eq('id', id);
 }
 
+// ── NHL API (free, no key required) ──
+const NHL_API = 'https://api-web.nhle.com/v1';
+
+async function nhlFetchPlayoff(season) {
+  const res = await fetch(`${NHL_API}/playoff-bracket/${season}`);
+  if (!res.ok) throw new Error(`NHL API ${res.status}`);
+  const data = await res.json();
+  if (!data.series?.length) throw new Error('No playoff data for this season yet.');
+  return data;
+}
+
+function nhlTeamName(team) {
+  if (!team) return '';
+  // Use city + common name for clarity: "Toronto Maple Leafs"
+  return team.name?.default || team.commonName?.default || team.abbrev || '';
+}
+
+function nhlParseTeams(series) {
+  const r1 = series
+    .filter(s => s.playoffRound === 1)
+    .sort((a, b) => a.seriesLetter.localeCompare(b.seriesLetter));
+  // NHL convention: series A-D = East, E-H = West
+  return r1.map((s, i) => ({
+    id: i,
+    team1: nhlTeamName(s.topSeedTeam),
+    team2: nhlTeamName(s.bottomSeedTeam),
+    conf: i < 4 ? 'East' : 'West',
+  }));
+}
+
+function nhlParseResults(series) {
+  const roundKeys = ['r1','r2','r3','r4'];
+  const sizes = [8, 4, 2, 1];
+  const results = { r1: Array(8).fill(null), r2: Array(4).fill(null), r3: Array(2).fill(null), r4: Array(1).fill(null) };
+  [1,2,3,4].forEach(round => {
+    const roundSeries = series
+      .filter(s => s.playoffRound === round)
+      .sort((a, b) => a.seriesLetter.localeCompare(b.seriesLetter));
+    roundSeries.forEach((s, idx) => {
+      if (idx >= sizes[round-1]) return;
+      const topW = s.topSeedWins || 0;
+      const botW = s.bottomSeedWins || 0;
+      if (topW >= 4 || botW >= 4) {
+        const winnerTeam = topW > botW ? s.topSeedTeam : s.bottomSeedTeam;
+        results[roundKeys[round-1]][idx] = {
+          winner: nhlTeamName(winnerTeam),
+          length: topW + botW,
+        };
+      }
+    });
+  });
+  return results;
+}
+
 // ── HELPERS ──
 function r2Teams(picks, r1cfg) {
   const pw = i => picks?.r1?.[i]?.winner || (r1cfg[i]?.team1 && r1cfg[i]?.team2 ? `${r1cfg[i].team1} / ${r1cfg[i].team2}` : 'TBD');
@@ -350,18 +428,159 @@ function NotConfigured() {
   );
 }
 
+// ── AVATAR SYSTEM ──
+// To enable avatars, run in Supabase SQL editor:
+//   ALTER TABLE pool_users ADD COLUMN avatar integer DEFAULT NULL;
+
+const AVATAR_LIST = [
+  { id:0, name:'Gappy',        bg:'#ef4444' },
+  { id:1, name:'Mustachio',    bg:'#c2741f' },
+  { id:2, name:'The Goalie',   bg:'#3b82f6' },
+  { id:3, name:'Penguin Pete', bg:'#0891b2' },
+  { id:4, name:'Mullet Mike',  bg:'#8b5cf6' },
+  { id:5, name:'Rocky',        bg:'#10b981' },
+  { id:6, name:'The Ref',      bg:'#6b7280' },
+  { id:7, name:'Puck Face',    bg:'#111827' },
+  { id:8, name:'Zamboni Z',    bg:'#0284c7' },
+  { id:9, name:'Cup Stanley',  bg:'#d97706' },
+];
+
+function AvatarSvg({id}) {
+  const s = [
+    // 0: Gappy — red helmet, gap-tooth grin
+    <svg key={0} viewBox="0 0 64 64" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+      <path d="M8 28 Q8 4 32 4 Q56 4 56 28 L56 34 L8 34Z" fill="#dc2626"/>
+      <rect x="8" y="29" width="48" height="7" rx="3.5" fill="#991b1b"/>
+      <circle cx="32" cy="44" r="20" fill="#fde68a"/>
+      <circle cx="23" cy="38" r="3.5" fill="#111"/>
+      <circle cx="41" cy="38" r="3.5" fill="#111"/>
+      <path d="M19 49 Q32 60 45 49" fill="#ef4444" stroke="#111" strokeWidth="1.5"/>
+      <rect x="20" y="49" width="9" height="8" rx="2" fill="white"/>
+      <rect x="35" y="49" width="9" height="8" rx="2" fill="white"/>
+    </svg>,
+    // 1: Mustachio — giant handlebar stache
+    <svg key={1} viewBox="0 0 64 64" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="32" cy="13" rx="20" ry="11" fill="#92400e"/>
+      <circle cx="32" cy="36" r="23" fill="#fed7aa"/>
+      <circle cx="23" cy="28" r="3.5" fill="#111"/>
+      <circle cx="41" cy="28" r="3.5" fill="#111"/>
+      <path d="M10 41 Q17 32 23 39 Q29 46 32 39 Q35 46 41 39 Q47 32 54 41 Q46 52 42 45 Q35 53 32 45 Q29 53 22 45 Q18 52 10 41Z" fill="#92400e"/>
+    </svg>,
+    // 2: The Goalie — classic face mask with cage
+    <svg key={2} viewBox="0 0 64 64" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="32" cy="34" rx="27" ry="28" fill="#f8fafc" stroke="#d1d5db" strokeWidth="1.5"/>
+      <rect x="5" y="18" width="54" height="7" fill="#dc2626"/>
+      <rect x="5" y="32" width="54" height="7" fill="#dc2626"/>
+      <ellipse cx="20" cy="25" rx="8" ry="7" fill="#111"/>
+      <ellipse cx="44" cy="25" rx="8" ry="7" fill="#111"/>
+      <line x1="18" y1="44" x2="46" y2="44" stroke="#9ca3af" strokeWidth="2.5"/>
+      <line x1="18" y1="50" x2="46" y2="50" stroke="#9ca3af" strokeWidth="2.5"/>
+      <line x1="25" y1="40" x2="25" y2="56" stroke="#9ca3af" strokeWidth="2.5"/>
+      <line x1="32" y1="40" x2="32" y2="56" stroke="#9ca3af" strokeWidth="2.5"/>
+      <line x1="39" y1="40" x2="39" y2="56" stroke="#9ca3af" strokeWidth="2.5"/>
+    </svg>,
+    // 3: Penguin Pete — penguin with hockey stick
+    <svg key={3} viewBox="0 0 64 64" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="32" cy="22" r="18" fill="#111"/>
+      <ellipse cx="32" cy="50" rx="20" ry="15" fill="#111"/>
+      <ellipse cx="32" cy="52" rx="12" ry="11" fill="white"/>
+      <ellipse cx="22" cy="18" rx="6" ry="7" fill="white"/>
+      <ellipse cx="42" cy="18" rx="6" ry="7" fill="white"/>
+      <circle cx="22" cy="18" r="3.5" fill="#111"/>
+      <circle cx="42" cy="18" r="3.5" fill="#111"/>
+      <circle cx="23" cy="17" r="1.2" fill="white"/>
+      <circle cx="43" cy="17" r="1.2" fill="white"/>
+      <path d="M25 27 L32 35 L39 27Z" fill="#f97316"/>
+      <line x1="49" y1="28" x2="62" y2="48" stroke="#6b7280" strokeWidth="4" strokeLinecap="round"/>
+      <line x1="57" y1="42" x2="63" y2="40" stroke="#6b7280" strokeWidth="3" strokeLinecap="round"/>
+    </svg>,
+    // 4: Mullet Mike — hockey mullet, stubble
+    <svg key={4} viewBox="0 0 64 64" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+      <path d="M16 34 Q11 54 13 64 L51 64 Q53 54 48 34Z" fill="#d97706"/>
+      <ellipse cx="32" cy="13" rx="18" ry="11" fill="#d97706"/>
+      <circle cx="32" cy="36" r="21" fill="#fde68a"/>
+      <circle cx="23" cy="29" r="3.5" fill="#111"/>
+      <circle cx="41" cy="29" r="3.5" fill="#111"/>
+      <path d="M22 44 Q32 52 42 44" fill="none" stroke="#111" strokeWidth="2.5" strokeLinecap="round"/>
+      <circle cx="26" cy="49" r="2" fill="#d97706" opacity="0.55"/>
+      <circle cx="32" cy="51" r="2" fill="#d97706" opacity="0.55"/>
+      <circle cx="38" cy="49" r="2" fill="#d97706" opacity="0.55"/>
+    </svg>,
+    // 5: Rocky — black eye, band-aid, tough grin
+    <svg key={5} viewBox="0 0 64 64" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="32" cy="13" rx="18" ry="10" fill="#374151"/>
+      <circle cx="32" cy="36" r="22" fill="#fed7aa"/>
+      <ellipse cx="22" cy="30" rx="7" ry="5.5" fill="#7c3aed" opacity="0.4"/>
+      <circle cx="22" cy="30" r="3.5" fill="#111"/>
+      <circle cx="41" cy="30" r="3.5" fill="#111"/>
+      <rect x="34" y="40" width="12" height="6" rx="2" fill="#fca5a5" stroke="#f87171" strokeWidth="0.7"/>
+      <line x1="34" y1="43" x2="46" y2="43" stroke="#f87171" strokeWidth="0.7"/>
+      <path d="M21 46 Q32 55 43 46" fill="none" stroke="#111" strokeWidth="2.5" strokeLinecap="round"/>
+    </svg>,
+    // 6: The Ref — stripes, angry brows, whistle
+    <svg key={6} viewBox="0 0 64 64" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="32" cy="30" r="22" fill="#fde68a"/>
+      <rect x="10" y="50" width="44" height="7" fill="#111"/>
+      <rect x="10" y="59" width="44" height="5" fill="#111"/>
+      <circle cx="23" cy="24" r="3.5" fill="#111"/>
+      <circle cx="41" cy="24" r="3.5" fill="#111"/>
+      <line x1="17" y1="17" x2="29" y2="21" stroke="#111" strokeWidth="3" strokeLinecap="round"/>
+      <line x1="47" y1="17" x2="35" y2="21" stroke="#111" strokeWidth="3" strokeLinecap="round"/>
+      <path d="M21 40 Q32 35 43 40" fill="none" stroke="#111" strokeWidth="2.5" strokeLinecap="round"/>
+      <ellipse cx="32" cy="44" rx="4.5" ry="3" fill="#e5e7eb" stroke="#9ca3af" strokeWidth="1.2"/>
+      <line x1="36" y1="44" x2="41" y2="47" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round"/>
+    </svg>,
+    // 7: Puck Face — rubber puck with eyes
+    <svg key={7} viewBox="0 0 64 64" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="32" cy="40" rx="29" ry="20" fill="#1f2937"/>
+      <ellipse cx="32" cy="30" rx="29" ry="22" fill="#374151"/>
+      <ellipse cx="32" cy="30" rx="29" ry="22" fill="none" stroke="#4b5563" strokeWidth="2.5" strokeDasharray="5 4"/>
+      <circle cx="21" cy="26" r="6" fill="#4b5563"/>
+      <circle cx="21" cy="26" r="3.2" fill="#9ca3af"/>
+      <circle cx="43" cy="26" r="6" fill="#4b5563"/>
+      <circle cx="43" cy="26" r="3.2" fill="#9ca3af"/>
+      <path d="M21 40 Q32 49 43 40" fill="none" stroke="#6b7280" strokeWidth="2.5" strokeLinecap="round"/>
+    </svg>,
+    // 8: Zamboni Z — zamboni machine hat, happy face
+    <svg key={8} viewBox="0 0 64 64" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="32" cy="46" r="17" fill="#fde68a"/>
+      <rect x="11" y="18" width="42" height="22" rx="3" fill="#0ea5e9"/>
+      <rect x="7" y="36" width="50" height="8" rx="4" fill="#0284c7"/>
+      <rect x="15" y="20" width="34" height="14" rx="2" fill="#7dd3fc"/>
+      <circle cx="19" cy="44" r="5.5" fill="#374151"/>
+      <circle cx="19" cy="44" r="3" fill="#6b7280"/>
+      <circle cx="45" cy="44" r="5.5" fill="#374151"/>
+      <circle cx="45" cy="44" r="3" fill="#6b7280"/>
+      <circle cx="25" cy="49" r="3" fill="#111"/>
+      <circle cx="39" cy="49" r="3" fill="#111"/>
+      <path d="M24 56 Q32 62 40 56" fill="none" stroke="#111" strokeWidth="2.5" strokeLinecap="round"/>
+    </svg>,
+    // 9: Cup Stanley — Stanley Cup trophy hat
+    <svg key={9} viewBox="0 0 64 64" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="32" cy="46" r="17" fill="#fde68a"/>
+      <circle cx="25" cy="43" r="3" fill="#111"/>
+      <circle cx="39" cy="43" r="3" fill="#111"/>
+      <path d="M23 52 Q32 59 41 52" fill="none" stroke="#111" strokeWidth="2.5" strokeLinecap="round"/>
+      <path d="M17 14 Q32 6 47 14 L45 20 Q32 12 19 20Z" fill="#fcd34d" stroke="#d97706" strokeWidth="1.5"/>
+      <rect x="22" y="20" width="20" height="12" rx="2" fill="#fbbf24" stroke="#d97706" strokeWidth="1.5"/>
+      <rect x="20" y="32" width="24" height="6" rx="1.5" fill="#fcd34d" stroke="#d97706" strokeWidth="1.2"/>
+      <rect x="24" y="25" width="16" height="5" fill="#fde68a" opacity="0.6"/>
+    </svg>,
+  ];
+  return s[id] ?? s[0];
+}
+
 // ── LOGIN ──
-function LoginPage({onLogin, initialError}) {
-  const [un,setUn]=useState('');const [pw,setPw]=useState('');
-  const [err,setErr]=useState(initialError||'');const [loading,setLoading]=useState(false);
-  async function submit(e){
+function LoginPage({onLogin, users}) {
+  const [pw,setPw]=useState('');
+  const [err,setErr]=useState('');const [loading,setLoading]=useState(false);
+  function submit(e){
     e.preventDefault(); setErr(''); setLoading(true);
     try {
-      const {data,error} = await sb.from('pool_users').select('*').eq('username',un.trim()).single();
-      if (error || !data) { setErr('User not found.'); return; }
-      if (data.password !== pw) { setErr('Incorrect password.'); return; }
-      onLogin(data);
-    } catch(e){ setErr('Connection error. Check your Supabase config.'); }
+      const admin = users.find(u => u.is_admin);
+      if (!admin || pw !== admin.password) { setErr('Incorrect pool password.'); setLoading(false); return; }
+      onLogin();
+    } catch(e){ setErr('Something went wrong.'); }
     finally { setLoading(false); }
   }
   return(
@@ -372,49 +591,170 @@ function LoginPage({onLogin, initialError}) {
         <div className="login-logo">
           <h1>NHL Playoff Pool</h1>
           <p className="login-tagline"><strong>Pick the champ. Crush the competition.</strong><br/>Remind everyone about it forever. 🏒</p>
-          <p className="login-sub">Sign in to make your picks</p>
+          <p className="login-sub">Enter the pool password to continue</p>
         </div>
         {err&&<Alert type="danger">{err}</Alert>}
         <form onSubmit={submit}>
-          <div className="form-group"><label className="form-label">Username</label><input className="form-input" value={un} onChange={e=>setUn(e.target.value)} autoFocus placeholder="Enter username" autoComplete="username" /></div>
-          <div className="form-group"><label className="form-label">Password</label><input className="form-input" type="password" value={pw} onChange={e=>setPw(e.target.value)} placeholder="Enter password" autoComplete="current-password" /></div>
-          <button className="btn btn-gold btn-full" type="submit" disabled={loading}>{loading?'Signing in…':'Sign In'}</button>
+          <div className="form-group"><label className="form-label">Pool Password</label><input className="form-input" type="password" value={pw} onChange={e=>setPw(e.target.value)} autoFocus placeholder="Enter pool password" autoComplete="current-password" /></div>
+          <button className="btn btn-gold btn-full" type="submit" disabled={loading}>{loading?'Entering…':'Enter Pool'}</button>
         </form>
-        <div className="login-hint">Default admin: <strong style={{color:'var(--text)'}}>admin / admin123</strong></div>
+        <div className="login-hint">Contact your pool commissioner for the password</div>
       </div>
     </div>
   );
 }
 
+// ── PROFILE SELECT ──
+function ProfileSelectPage({users, onSelect, onSignOut, onAdd}) {
+  const FALLBACK_COLORS = ['#7c5cfc','#f5a623','#22c55e','#f43f5e','#3b82f6','#ec4899','#14b8a6','#f97316','#8b5cf6','#06b6d4'];
+  function fallbackColor(name) { let h=0; for(const c of name) h=(h*31+c.charCodeAt(0))&0x7fffffff; return FALLBACK_COLORS[h%FALLBACK_COLORS.length]; }
+  function initials(name) { return name.trim().split(/\s+/).map(w=>w[0]?.toUpperCase()||'').slice(0,2).join('')||'?'; }
+
+  const [showAdd,setShowAdd]=useState(false);
+  const [newName,setNewName]=useState('');
+  const [selAvatar,setSelAvatar]=useState(0);
+  const [saving,setSaving]=useState(false);
+  const [err,setErr]=useState('');
+
+  function openAdd(){ setNewName(''); setSelAvatar(0); setErr(''); setShowAdd(true); }
+
+  async function handleCreate(e){
+    e.preventDefault();
+    const name=newName.trim();
+    if(name.length<2){ setErr('Name must be at least 2 characters.'); return; }
+    if(users.some(u=>u.username.toLowerCase()===name.toLowerCase())){ setErr('That name is already taken.'); return; }
+    setSaving(true); setErr('');
+    try{
+      await onAdd({ id:uid(), username:name, password:'player', is_admin:false, picks:null, avatar:selAvatar, created_at:new Date().toISOString() });
+      setShowAdd(false);
+    }catch(e){
+      const m=e.message||'';
+      setErr(m.toLowerCase().includes('avatar')
+        ? 'Add the avatar column first: ALTER TABLE pool_users ADD COLUMN avatar integer DEFAULT NULL;'
+        : 'Error: '+m);
+    }finally{ setSaving(false); }
+  }
+
+  return(
+    <div className="profile-wrap">
+      <div className="login-blob login-blob-1"/><div className="login-blob login-blob-2"/><div className="login-blob login-blob-3"/>
+      <div className="login-grain"/>
+      <div className="profile-header">
+        <div style={{fontSize:'2.5rem',marginBottom:14}}>🏒</div>
+        <h1>NHL Playoff Pool</h1>
+        <p>Who's playing today?</p>
+      </div>
+      <div className="profile-grid">
+        {users.map(u=>{
+          const hasAvatar = u.avatar != null;
+          return(
+            <div key={u.id} className="profile-card" onClick={()=>onSelect(u)}>
+              <div className="profile-avatar" style={{background: hasAvatar ? AVATAR_LIST[u.avatar]?.bg : fallbackColor(u.username), overflow:'hidden', fontSize: hasAvatar ? 0 : '1.5rem'}}>
+                {hasAvatar ? <AvatarSvg id={u.avatar}/> : initials(u.username)}
+              </div>
+              <div className="profile-name">{u.username}</div>
+              {u.is_admin&&<div className="profile-admin-badge">Admin</div>}
+            </div>
+          );
+        })}
+        <div className="profile-add-card" onClick={openAdd}>
+          <div className="profile-add-icon">+</div>
+          <div className="profile-add-label">Add Profile</div>
+        </div>
+      </div>
+      <button className="profile-exit" onClick={onSignOut}>Sign out of pool</button>
+
+      {showAdd&&(
+        <div className="modal-bg" onClick={e=>e.target===e.currentTarget&&setShowAdd(false)}>
+          <div className="modal" style={{maxWidth:460}}>
+            <div className="modal-title">Create Profile</div>
+            {err&&<Alert type="danger">{err}</Alert>}
+            <form onSubmit={handleCreate}>
+              <div className="form-group">
+                <label className="form-label">Nickname</label>
+                <input className="form-input" value={newName} onChange={e=>setNewName(e.target.value)} autoFocus placeholder="e.g. Getzlaf's Ghost" maxLength={24}/>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Pick Your Avatar</label>
+                <div className="avatar-picker-grid">
+                  {AVATAR_LIST.map(a=>(
+                    <button key={a.id} type="button" className={`avatar-picker-opt${selAvatar===a.id?' chosen':''}`} onClick={()=>setSelAvatar(a.id)} title={a.name}>
+                      <div className="avatar-swatch" style={{background:a.bg}}><AvatarSvg id={a.id}/></div>
+                    </button>
+                  ))}
+                </div>
+                <div style={{textAlign:'center',fontSize:'0.78rem',color:'var(--text2)',marginTop:4,fontWeight:600}}>{AVATAR_LIST[selAvatar]?.name}</div>
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="btn btn-ghost" onClick={()=>setShowAdd(false)}>Cancel</button>
+                <button type="submit" className="btn btn-gold" disabled={saving}>{saving?'Creating…':'Create Profile'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── NAVBAR ──
-function NavBar({user,view,setView,onLogout}){
-  const nav=[{key:'dashboard',label:'Home'},{key:'picks',label:'My Picks'},{key:'leaderboard',label:'Standings'},...(user.is_admin?[{key:'manage-users',label:'Members'},{key:'bracket-setup',label:'Bracket Setup'},{key:'results',label:'Results'}]:[])];
+function NavBar({user,view,setView,onSwitchProfile,onSignOut,needsPicks}){
+  const memberNav=[
+    {key:'pool',label:'My Pool'},
+    {key:'picks',label:<>My Bracket{needsPicks&&<span style={{display:'inline-block',width:7,height:7,borderRadius:'50%',background:'var(--gold)',marginLeft:6,verticalAlign:'middle',flexShrink:0}}/>}</>},
+  ];
+  const adminNav=user.is_admin?[{key:'manage-users',label:'Members'},{key:'bracket-setup',label:'Bracket Setup'},{key:'results',label:'Results'}]:[];
+  const hasAvatar=user.avatar!=null;
   return(
     <nav className="nav">
       <div className="nav-logo"><span className="nav-logo-icon">🏒</span>NHL Pool</div>
-      <div className="nav-links">{nav.map(n=><button key={n.key} className={`nav-btn${view===n.key?' active':''}`} onClick={()=>setView(n.key)}>{n.label}</button>)}</div>
-      <div className="nav-right"><div className="nav-pill">👤 {user.username}{user.is_admin?' · Admin':''}</div><button className="btn-logout" onClick={onLogout}>Sign Out</button></div>
+      <div className="nav-links">{[...memberNav,...adminNav].map(n=><button key={n.key} className={`nav-btn${view===n.key?' active':''}`} onClick={()=>setView(n.key)}>{n.label}</button>)}</div>
+      <div className="nav-right">
+        <div className="nav-pill" style={{display:'flex',alignItems:'center',gap:8}}>
+          <div style={{width:22,height:22,borderRadius:'50%',background:hasAvatar?AVATAR_LIST[user.avatar]?.bg:'var(--purple)',overflow:'hidden',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:hasAvatar?0:'0.65rem',fontWeight:800,color:'#fff'}}>
+            {hasAvatar?<AvatarSvg id={user.avatar}/>:user.username[0]?.toUpperCase()}
+          </div>
+          {user.username}{user.is_admin?' · Admin':''}
+        </div>
+        <button className="btn-logout" onClick={onSwitchProfile}>Switch</button>
+        <button className="btn-logout" onClick={onSignOut} style={{borderColor:'rgba(244,63,94,0.3)',color:'var(--text3)'}}>Sign Out</button>
+      </div>
     </nav>
   );
 }
 
-// ── DASHBOARD ──
-function DashboardPage({user,data,setView,onRefresh}){
+// ── POOL VIEW (score + standings + rules) ──
+function PoolView({user,data,onRefresh,onGoToPicks}){
   const {bracket}=data;
   const myScore=calcScore(user.picks,bracket.results);
   const maxAvail=calcMaxAvail(bracket.results);
-  const allScores=data.users.filter(u=>u.picks).map(u=>({...u,score:calcScore(u.picks,bracket.results)})).sort((a,b)=>b.score-a.score);
-  const myRank=allScores.findIndex(u=>u.id===user.id)+1;
   const stMap={setup:{label:'Setting Up',type:'setup'},open:{label:'Open for Picks',type:'open'},locked:{label:'Picks Locked',type:'locked'},complete:{label:'Complete',type:'complete'}};
   const st=stMap[bracket.status]||stMap.setup;
+
+  // build ranked list: pickers first (by score desc), non-pickers after
+  let rk=0;
+  const scored=[...data.users]
+    .map(u=>({...u,score:calcScore(u.picks,bracket.results)}))
+    .sort((a,b)=>{if(!a.picks&&!b.picks)return 0;if(!a.picks)return 1;if(!b.picks)return-1;return b.score-a.score;})
+    .map(u=>{if(u.picks)rk++;return{...u,rank:u.picks?rk:null};});
+  const myEntry=scored.find(u=>u.id===user.id);
+
+  const bd=u=>{if(!u.picks)return Array(4).fill(null);return[['r1',8],['r2',4],['r3',2],['r4',1]].map(([k,n],ri)=>{let s=0,bonus=0;for(let i=0;i<n;i++){const res=bracket.results[k]?.[i],pk=u.picks[k]?.[i];if(res&&pk&&res.winner&&pk.winner===res.winner){s+=ROUND_PTS[ri];if(pk.length&&res.length&&pk.length===res.length)bonus+=SERIES_BONUS;}}return{pts:s,bonus};});};
+  const rankIcon=r=>r===1?'🥇':r===2?'🥈':r===3?'🥉':r;
+
   return(
     <div className="page">
       <div className="hero-card">
-        <div className="hero-label">Your Score</div>
+        <div className="hero-label">Your Score · {bracket.season}</div>
         <div className="hero-score">{user.picks?myScore:'—'}</div>
-        <div className="hero-sub">{user.picks?`${myRank>0?`Rank #${myRank} of ${allScores.length} · `:''}${maxAvail} pts available so far`:bracket.status==='open'?"You haven't submitted picks yet":'Picks not yet open'}</div>
-        {!user.picks&&bracket.status==='open'&&<button className="btn btn-ghost btn-sm" style={{marginTop:'16px',borderColor:'rgba(255,255,255,0.3)',color:'#fff'}} onClick={()=>setView('picks')}>Make Your Picks →</button>}
+        <div className="hero-sub">
+          {user.picks
+            ?`${myEntry?.rank?`Rank #${myEntry.rank} of ${scored.filter(u=>u.picks).length} · `:''}${maxAvail} pts available so far`
+            :bracket.status==='open'?"You haven't submitted picks yet":'Picks not yet open'}
+        </div>
+        {!user.picks&&bracket.status==='open'&&<button className="btn btn-ghost btn-sm" style={{marginTop:16,borderColor:'rgba(255,255,255,0.3)',color:'#fff'}} onClick={onGoToPicks}>Make Your Picks →</button>}
       </div>
+
       <div className="flex gap-2 mb-3 flex-wrap">
         <div className="stat-pill"><div className="stat-value">{data.users.length}</div><div className="stat-label">Members</div></div>
         <div className="stat-pill"><div className="stat-value">{data.users.filter(u=>u.picks).length}</div><div className="stat-label">Picks In</div></div>
@@ -422,18 +762,47 @@ function DashboardPage({user,data,setView,onRefresh}){
         <div className="stat-pill"><div className="stat-value"><span className={`badge badge-${st.type}`}>{st.label}</span></div><div className="stat-label">Status</div></div>
         <div className="stat-pill" style={{cursor:'pointer'}} onClick={onRefresh}><div className="stat-value" style={{fontSize:'1.2rem'}}>↻</div><div className="stat-label">Refresh</div></div>
       </div>
-      <div className="grid-2">
-        <div className="card">
-          <div className="card-title">Scoring Rules</div>
-          {[['First Round','10'],['Second Round','25'],['Conference Finals','50'],['Stanley Cup Final','100']].map(([r,p])=><div key={r} className="scoring-row"><span className="text-dim">{r}</span><span className="pts-chip">{p} pts</span></div>)}
-          <div className="scoring-row" style={{borderTop:'1px solid var(--border)',marginTop:'8px',paddingTop:'8px'}}><span className="text-dim">Correct Series Length</span><span style={{background:'rgba(34,197,94,0.12)',color:'var(--green)',fontWeight:800,fontSize:'0.82rem',padding:'3px 10px',borderRadius:'20px'}}>+3 pts</span></div>
+
+      <div className="card mb-3">
+        <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
+          <div className="card-title" style={{marginBottom:0}}>Standings</div>
+          {maxAvail>0&&<div className="text-xs text-dim2">Available so far: <strong style={{color:'var(--text2)'}}>{maxAvail} pts</strong></div>}
         </div>
-        {allScores.length>0?(
-          <div className="card">
-            <div className="flex justify-between items-center mb-3"><div className="card-title" style={{marginBottom:0}}>Top Picks</div><button className="btn btn-ghost btn-sm" onClick={()=>setView('leaderboard')}>View All</button></div>
-            <div className="table-wrap"><table><thead><tr><th>#</th><th>Player</th><th className="text-right">Score</th></tr></thead><tbody>{allScores.slice(0,5).map((u,i)=><tr key={u.id} className={u.id===user.id?'my-row':''}><td><strong className={i===0?'lb-rank-1':i===1?'lb-rank-2':i===2?'lb-rank-3':''}>{i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}</strong></td><td style={{fontWeight:500}}>{u.username}{u.id===user.id&&<span className="text-dim2 text-xs"> (you)</span>}</td><td className="text-right"><strong style={{color:'var(--gold)',fontSize:'1rem'}}>{u.score}</strong></td></tr>)}</tbody></table></div>
-          </div>
-        ):<div className="card"><div className="empty-state"><h3>No picks yet</h3><p className="text-xs">Scores appear once picks are submitted.</p></div></div>}
+        {scored.every(u=>!u.picks)
+          ?<div className="empty-state"><h3>No picks yet</h3><p className="text-xs">Scores appear once picks are submitted.</p></div>
+          :<div className="table-wrap"><table>
+            <thead><tr><th>#</th><th>Player</th><th className="text-right">Score</th><th className="text-right">R1</th><th className="text-right">R2</th><th className="text-right">Conf</th><th className="text-right">Cup</th><th className="text-right">Bonus</th></tr></thead>
+            <tbody>{scored.map(u=>{
+              const b=bd(u);const tb=b.filter(Boolean).reduce((a,x)=>a+x.bonus,0);const hasAv=u.avatar!=null;
+              return(<tr key={u.id} className={u.id===user.id?'my-row':''}>
+                <td><strong className={u.rank===1?'lb-rank-1':u.rank===2?'lb-rank-2':u.rank===3?'lb-rank-3':''}>{u.rank?rankIcon(u.rank):'—'}</strong></td>
+                <td>
+                  <div className="flex items-center gap-2">
+                    <div style={{width:26,height:26,borderRadius:'50%',background:hasAv?AVATAR_LIST[u.avatar]?.bg:'#7c5cfc',overflow:'hidden',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:hasAv?0:'0.65rem',fontWeight:800,color:'#fff'}}>
+                      {hasAv?<AvatarSvg id={u.avatar}/>:u.username[0]?.toUpperCase()}
+                    </div>
+                    <span style={{fontWeight:600}}>{u.username}{u.id===user.id&&<span className="text-dim2 text-xs"> (you)</span>}{!u.picks&&<span className="text-dim2 text-xs"> · no picks</span>}</span>
+                  </div>
+                </td>
+                <td className="text-right"><strong style={{color:'var(--gold)',fontSize:'1.05rem'}}>{u.picks?u.score:'—'}</strong></td>
+                {b.map((r,ri)=><td key={ri} className="text-right text-dim2">{r?r.pts||'—':'—'}</td>)}
+                <td className="text-right" style={{color:'var(--green)',fontWeight:700}}>{tb>0?`+${tb}`:'—'}</td>
+              </tr>);
+            })}</tbody>
+          </table></div>
+        }
+      </div>
+
+      <div className="card">
+        <div className="card-title">Scoring Rules</div>
+        {[['First Round','10'],['Second Round','25'],['Conference Finals','50'],['Stanley Cup Final','100']].map(([r,p])=>(
+          <div key={r} className="scoring-row"><span className="text-dim">{r}</span><span className="pts-chip">{p} pts</span></div>
+        ))}
+        <div className="scoring-row" style={{borderTop:'1px solid var(--border)',marginTop:8,paddingTop:8}}>
+          <span className="text-dim">Correct series length</span>
+          <span style={{background:'rgba(34,197,94,0.12)',color:'var(--green)',fontWeight:800,fontSize:'0.82rem',padding:'3px 10px',borderRadius:'20px'}}>+3 pts</span>
+        </div>
+        <div className="scoring-row"><span className="text-dim">Maximum possible</span><span className="pts-chip">425 pts</span></div>
       </div>
     </div>
   );
@@ -463,51 +832,49 @@ function MyPicksPage({user,data,onSavePicks}){
   const setup=bracket.status==='setup';
   const init=()=>user.picks||{r1:Array(8).fill(null),r2:Array(4).fill(null),r3:Array(2).fill(null),r4:Array(1).fill(null)};
   const [picks,setPicks]=useState(init);
-  const [saved,setSaved]=useState(false);const [saving,setSaving]=useState(false);const [tab,setTab]=useState('r1');
+  const [saving,setSaving]=useState(false);const [tab,setTab]=useState('r1');
   useEffect(()=>setPicks(init()),[user.id]);
-  function setPick(round,idx,val){setPicks(p=>{const n={...p,[round]:[...p[round]]};n[round][idx]=val;return n;});setSaved(false);}
-  async function handleSave(){setSaving(true);await onSavePicks(picks);setSaved(true);setSaving(false);setTimeout(()=>setSaved(false),3000);}
+  function setPick(round,idx,val){setPicks(p=>{const n={...p,[round]:[...p[round]]};n[round][idx]=val;return n;});}
+  async function handleSave(){setSaving(true);await onSavePicks(picks);setSaving(false);}
   const r2t=r2Teams(picks,bracket.round1);const r3t=r3Teams(picks);const r4t=r4Teams(picks);
   const tabs=[{key:'r1',label:'Round 1'},{key:'r2',label:'Round 2'},{key:'r3',label:'Conf Finals'},{key:'r4',label:'Cup Final'}];
-  if(setup)return<div className="page"><div className="page-title">📝 My Picks</div><Alert type="info">The pool is being set up. Check back when the admin opens picks.</Alert></div>;
+
+  const hasPick=picks.r1.some(Boolean)||picks.r2.some(Boolean)||picks.r3.some(Boolean)||picks.r4.some(Boolean);
+
+  if(setup)return(
+    <div className="page">
+      <div className="page-title">My Bracket</div>
+      <div className="empty-state" style={{padding:'80px 24px'}}>
+        <div style={{fontSize:'3rem',marginBottom:16}}>🏒</div>
+        <h3>Pool is being set up</h3>
+        <p className="text-xs" style={{marginTop:8}}>The commissioner is configuring the bracket. Check back soon.</p>
+      </div>
+    </div>
+  );
+
   return(
     <div className="page">
-      <div className="page-title">📝 My Picks</div>
-      {locked&&<Alert type="warn">Picks are locked — viewing your submitted bracket.</Alert>}
-      {!locked&&!user.picks&&<Alert type="info">Pick a winner and series length for each matchup, then save.</Alert>}
-      {saved&&<Alert type="success">Picks saved! Everyone can see your picks now.</Alert>}
+      <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
+        <div className="page-title" style={{marginBottom:0}}>
+          {locked?'My Bracket':'Make Your Picks'}
+        </div>
+        {!locked&&hasPick&&<button className="btn btn-gold btn-sm" onClick={handleSave} disabled={saving}>{saving?'Saving…':'💾 Save Picks'}</button>}
+      </div>
+      {locked&&<Alert type="warn">Picks are locked — this is your submitted bracket.</Alert>}
+      {!locked&&!user.picks&&<Alert type="info">Pick a winner and series length for every matchup, then save. You can come back and edit until the playoffs start.</Alert>}
       <div className="tabs">{tabs.map(t=><button key={t.key} className={`tab${tab===t.key?' active':''}`} onClick={()=>setTab(t.key)}>{t.label}</button>)}</div>
       {tab==='r1'&&<><div className="conf-label">Eastern Conference</div><div className="grid-2 mb-3">{[0,1,2,3].map(i=><SeriesPicker key={i} label={`East Series ${i+1}`} team1={bracket.round1[i].team1} team2={bracket.round1[i].team2} pick={picks.r1[i]} onChange={v=>setPick('r1',i,v)} disabled={locked} result={bracket.results.r1[i]}/>)}</div><div className="conf-label">Western Conference</div><div className="grid-2">{[4,5,6,7].map((i,n)=><SeriesPicker key={i} label={`West Series ${n+1}`} team1={bracket.round1[i].team1} team2={bracket.round1[i].team2} pick={picks.r1[i]} onChange={v=>setPick('r1',i,v)} disabled={locked} result={bracket.results.r1[i]}/>)}</div></>}
       {tab==='r2'&&<><div className="conf-label">Eastern Conference</div><div className="grid-2 mb-3">{[0,1].map(i=><SeriesPicker key={i} label={r2t[i].label} team1={r2t[i].team1} team2={r2t[i].team2} pick={picks.r2[i]} onChange={v=>setPick('r2',i,v)} disabled={locked} result={bracket.results.r2[i]}/>)}</div><div className="conf-label">Western Conference</div><div className="grid-2">{[2,3].map(i=><SeriesPicker key={i} label={r2t[i].label} team1={r2t[i].team1} team2={r2t[i].team2} pick={picks.r2[i]} onChange={v=>setPick('r2',i,v)} disabled={locked} result={bracket.results.r2[i]}/>)}</div></>}
       {tab==='r3'&&<div className="grid-2">{[0,1].map(i=><SeriesPicker key={i} label={r3t[i].label} team1={r3t[i].team1} team2={r3t[i].team2} pick={picks.r3[i]} onChange={v=>setPick('r3',i,v)} disabled={locked} result={bracket.results.r3[i]}/>)}</div>}
       {tab==='r4'&&<div style={{maxWidth:'440px',margin:'0 auto'}}><SeriesPicker label={r4t[0].label} team1={r4t[0].team1} team2={r4t[0].team2} pick={picks.r4[0]} onChange={v=>setPick('r4',0,v)} disabled={locked} result={bracket.results.r4[0]}/></div>}
-      {!locked&&<div style={{marginTop:'24px',textAlign:'right'}}><button className="btn btn-gold" onClick={handleSave} disabled={saving}>{saving?'Saving…':'💾 Save Picks'}</button></div>}
+      {!locked&&<div style={{marginTop:24,display:'flex',justifyContent:'flex-end'}}>
+        <button className="btn btn-gold" onClick={handleSave} disabled={saving} style={{minWidth:160}}>{saving?'Saving…':'💾 Submit Picks'}</button>
+      </div>}
     </div>
   );
 }
 
-// ── LEADERBOARD ──
-function LeaderboardPage({user,data}){
-  const {bracket}=data;
-  const scores=data.users.map(u=>({...u,score:calcScore(u.picks,bracket.results)})).sort((a,b)=>b.score-a.score);
-  const maxAvail=calcMaxAvail(bracket.results);
-  const rankIcon=r=>r===1?'🥇':r===2?'🥈':r===3?'🥉':r;
-  const bd=(u)=>[['r1',8],['r2',4],['r3',2],['r4',1]].map(([k,n],ri)=>{let s=0,bonus=0;for(let i=0;i<n;i++){const res=bracket.results[k]?.[i],pk=u.picks?.[k]?.[i];if(res&&pk&&res.winner&&pk.winner===res.winner){s+=ROUND_PTS[ri];if(pk.length&&res.length&&pk.length===res.length)bonus+=SERIES_BONUS;}}return{pts:s,bonus};});
-  return(
-    <div className="page">
-      <div className="page-title">🏆 Standings</div>
-      <div className="card">
-        <div className="flex justify-between items-center mb-3 flex-wrap gap-2"><div className="card-title" style={{marginBottom:0}}>Leaderboard · {bracket.season}</div>{maxAvail>0&&<div className="text-xs text-dim2">Available so far: <strong style={{color:'var(--text2)'}}>{maxAvail} pts</strong></div>}</div>
-        {scores.length===0?<div className="empty-state"><h3>No picks yet</h3></div>:(
-          <div className="table-wrap"><table>
-            <thead><tr><th>#</th><th>Player</th><th className="text-right">Score</th><th className="text-right">R1</th><th className="text-right">R2</th><th className="text-right">Conf</th><th className="text-right">Cup</th><th className="text-right">Bonus</th></tr></thead>
-            <tbody>{scores.map((u,i)=>{const b=bd(u);const tb=b.reduce((a,x)=>a+x.bonus,0);return(<tr key={u.id} className={u.id===user.id?'my-row':''}><td><strong className={i===0?'lb-rank-1':i===1?'lb-rank-2':i===2?'lb-rank-3':''}>{rankIcon(i+1)}</strong></td><td style={{fontWeight:600}}>{u.username}{u.id===user.id&&<span className="text-dim2 text-xs"> (you)</span>}{!u.picks&&<span className="text-dim2 text-xs"> · no picks</span>}</td><td className="text-right"><strong style={{color:'var(--gold)',fontSize:'1.05rem'}}>{u.score}</strong></td>{b.map((r,ri)=><td key={ri} className="text-right text-dim2">{r.pts||'—'}</td>)}<td className="text-right" style={{color:'var(--green)',fontWeight:700}}>{tb>0?`+${tb}`:'—'}</td></tr>);})}</tbody>
-          </table></div>
-        )}
-      </div>
-    </div>
-  );
-}
+
 
 // ── MANAGE USERS ──
 function ManageUsersPage({data,onRefresh}){
@@ -530,7 +897,7 @@ function ManageUsersPage({data,onRefresh}){
   async function handleClear(u){if(!confirm(`Clear picks for "${u.username}"?`))return;await dbSavePicks(u.id,null);await onRefresh();setMsg('Picks cleared.');setTimeout(()=>setMsg(''),3000);}
   return(
     <div className="page">
-      <div className="page-title">👥 League Members</div>
+      <div className="page-title">League Members</div>
       {msg&&<Alert type="success">{msg}</Alert>}
       <div className="card">
         <div className="flex justify-between items-center mb-3"><div className="card-title" style={{marginBottom:0}}>All Members ({data.users.length})</div><button className="btn btn-gold btn-sm" onClick={openAdd}>+ Add Member</button></div>
@@ -563,15 +930,35 @@ function ManageUsersPage({data,onRefresh}){
 
 // ── BRACKET SETUP ──
 function BracketSetupPage({data,onRefresh}){
-  const [bracket,setBracket]=useState(data.bracket);const [msg,setMsg]=useState('');const [saving,setSaving]=useState(false);
+  const [bracket,setBracket]=useState(data.bracket);const [msg,setMsg]=useState('');const [msgType,setMsgType]=useState('success');
+  const [saving,setSaving]=useState(false);const [importing,setImporting]=useState(false);
   function setTeam(idx,field,val){setBracket(p=>{const r1=[...p.round1];r1[idx]={...r1[idx],[field]:val};return{...p,round1:r1};});}
-  async function handleSave(){setSaving(true);await dbSaveConfig(bracket);await onRefresh();setSaving(false);setMsg('Bracket saved!');setTimeout(()=>setMsg(''),3000);}
+  async function handleSave(){setSaving(true);await dbSaveConfig(bracket);await onRefresh();setSaving(false);setMsg('Bracket saved!');setMsgType('success');setTimeout(()=>setMsg(''),3000);}
+  async function handleImportNHL(){
+    setImporting(true);setMsg('');
+    try{
+      const nhl=await nhlFetchPlayoff(bracket.season);
+      const round1=nhlParseTeams(nhl.series);
+      if(round1.some(s=>s.team1||s.team2)){
+        setBracket(p=>({...p,round1}));
+        setMsg(`Teams imported from NHL ${bracket.season} bracket — review and save.`);setMsgType('success');
+      } else {
+        setMsg('No teams found in NHL bracket yet. Check back when playoffs are announced.');setMsgType('warn');
+      }
+    }catch(e){setMsg(`NHL import failed: ${e.message}`);setMsgType('danger');}
+    finally{setImporting(false);setTimeout(()=>setMsg(''),6000);}
+  }
   const statusOpts=[{v:'setup',l:'Setup',d:'Not yet open'},{v:'open',l:'Open',d:'Accepting picks'},{v:'locked',l:'Locked',d:'No more picks'},{v:'complete',l:'Complete',d:'Season over'}];
   return(
     <div className="page">
-      <div className="page-title">⚙️ Bracket Setup</div>
-      {msg&&<Alert type="success">{msg}</Alert>}
-      <Alert type="info">Enter the 16 playoff teams. Set status to "Open" when ready.</Alert>
+      <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
+        <div className="page-title" style={{marginBottom:0}}>⚙️ Bracket Setup</div>
+        <button className="btn btn-ghost btn-sm" onClick={handleImportNHL} disabled={importing} style={{borderColor:'rgba(255,255,255,0.15)'}}>
+          {importing?'Fetching…':'⬇ Import from NHL'}
+        </button>
+      </div>
+      {msg&&<Alert type={msgType}>{msg}</Alert>}
+      <Alert type="info">Enter the 16 playoff teams manually, or use <strong>Import from NHL</strong> to auto-fill from the official bracket. Set status to "Open" when ready for picks.</Alert>
       <div className="card mb-3">
         <div className="card-title">Pool Status</div>
         <div className="flex gap-2 flex-wrap">{statusOpts.map(o=><button key={o.v} onClick={()=>setBracket(p=>({...p,status:o.v}))} style={{background:bracket.status===o.v?'var(--grad-purple)':'var(--bg3)',border:'1px solid',borderColor:bracket.status===o.v?'var(--purple)':'var(--border2)',color:bracket.status===o.v?'#fff':'var(--text2)',padding:'9px 18px',borderRadius:'10px',cursor:'pointer',fontSize:'0.86rem',fontWeight:600,fontFamily:'inherit'}}>{o.l} <span style={{opacity:0.7,fontWeight:400,fontSize:'0.78rem'}}>· {o.d}</span></button>)}</div>
@@ -587,20 +974,38 @@ function BracketSetupPage({data,onRefresh}){
 
 // ── RESULTS ──
 function ResultsPage({data,onRefresh}){
-  const [results,setResults]=useState(data.bracket.results);const [msg,setMsg]=useState('');const [saving,setSaving]=useState(false);
+  const [results,setResults]=useState(data.bracket.results);const [msg,setMsg]=useState('');const [msgType,setMsgType]=useState('success');
+  const [saving,setSaving]=useState(false);const [syncing,setSyncing]=useState(false);
   const {bracket}=data;
   function setResult(round,idx,field,val){setResults(p=>{const n={...p,[round]:[...p[round]]};n[round][idx]={...(n[round][idx]||{}),[field]:field==='length'?parseInt(val)||null:val};return n;});}
-  async function handleSave(){setSaving(true);await dbSaveConfig({...bracket,results});await onRefresh();setSaving(false);setMsg('Results saved! Scores updated.');setTimeout(()=>setMsg(''),3000);}
-  const ar2=actualR2(bracket);const ar3=actualR3(bracket);const ar4=actualR4(bracket);
+  async function handleSave(){setSaving(true);await dbSaveConfig({...bracket,results});await onRefresh();setSaving(false);setMsg('Results saved! Scores updated.');setMsgType('success');setTimeout(()=>setMsg(''),3000);}
+  async function handleSyncNHL(){
+    setSyncing(true);setMsg('');
+    try{
+      const nhl=await nhlFetchPlayoff(bracket.season);
+      const synced=nhlParseResults(nhl.series);
+      const completed=Object.values(synced).flat().filter(Boolean).length;
+      if(completed===0){setMsg('No completed series found yet — check back once the playoffs start.');setMsgType('warn');}
+      else{setResults(synced);setMsg(`Synced ${completed} completed series from NHL. Review and save.`);setMsgType('success');}
+    }catch(e){setMsg(`NHL sync failed: ${e.message}`);setMsgType('danger');}
+    finally{setSyncing(false);setTimeout(()=>setMsg(''),6000);}
+  }
+  const ar2=actualR2({...bracket,results});const ar3=actualR3({...bracket,results});const ar4=actualR4({...bracket,results});
   function ResultRow({round,idx,team1,team2,label}){
     const res=results[round]?.[idx]||{};const teams=[team1,team2].filter(t=>t&&!t.includes('Winner')&&!t.includes('Champ'));
-    return(<div style={{marginBottom:'12px',padding:'14px',background:'var(--bg3)',borderRadius:'12px',border:'1px solid var(--border)'}}><div className="form-label" style={{marginBottom:'10px'}}>{label}</div><div className="flex gap-2 flex-wrap"><div style={{flex:1,minWidth:'160px'}}><div className="form-label" style={{fontSize:'0.68rem'}}>Winner</div><select className="form-input" value={res.winner||''} onChange={e=>setResult(round,idx,'winner',e.target.value)}><option value="">— Not played —</option>{teams.length>0?teams.map(t=><option key={t} value={t}>{t}</option>):[<option key={team1} value={team1}>{team1}</option>,<option key={team2} value={team2}>{team2}</option>]}</select></div><div style={{width:'110px'}}><div className="form-label" style={{fontSize:'0.68rem'}}>Games</div><select className="form-input" value={res.length||''} onChange={e=>setResult(round,idx,'length',e.target.value)}><option value="">—</option>{[4,5,6,7].map(n=><option key={n} value={n}>{n}</option>)}</select></div></div></div>);
+    const isDone=!!res.winner;
+    return(<div style={{marginBottom:'12px',padding:'14px',background:'var(--bg3)',borderRadius:'12px',border:`1px solid ${isDone?'rgba(34,197,94,0.2)':'var(--border)'}`}}><div className="form-label" style={{marginBottom:'10px',display:'flex',justifyContent:'space-between'}}><span>{label}</span>{isDone&&<span style={{color:'var(--green)',fontWeight:700,fontSize:'0.7rem'}}>✓ {res.winner} in {res.length}</span>}</div><div className="flex gap-2 flex-wrap"><div style={{flex:1,minWidth:'160px'}}><div className="form-label" style={{fontSize:'0.68rem'}}>Winner</div><select className="form-input" value={res.winner||''} onChange={e=>setResult(round,idx,'winner',e.target.value)}><option value="">— Not played —</option>{teams.length>0?teams.map(t=><option key={t} value={t}>{t}</option>):[<option key={team1} value={team1}>{team1}</option>,<option key={team2} value={team2}>{team2}</option>]}</select></div><div style={{width:'110px'}}><div className="form-label" style={{fontSize:'0.68rem'}}>Games</div><select className="form-input" value={res.length||''} onChange={e=>setResult(round,idx,'length',e.target.value)}><option value="">—</option>{[4,5,6,7].map(n=><option key={n} value={n}>{n}</option>)}</select></div></div></div>);
   }
   return(
     <div className="page">
-      <div className="page-title">📊 Enter Results</div>
-      {msg&&<Alert type="success">{msg}</Alert>}
-      <Alert type="info">Enter results as each series finishes. Scores update for all players instantly.</Alert>
+      <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
+        <div className="page-title" style={{marginBottom:0}}>📊 Results</div>
+        <button className="btn btn-ghost btn-sm" onClick={handleSyncNHL} disabled={syncing} style={{borderColor:'rgba(255,255,255,0.15)'}}>
+          {syncing?'Syncing…':'⟳ Sync from NHL'}
+        </button>
+      </div>
+      {msg&&<Alert type={msgType}>{msg}</Alert>}
+      <Alert type="info">Use <strong>Sync from NHL</strong> to auto-fill completed series, or enter results manually below. Save when done to update everyone's scores.</Alert>
       <div className="grid-2"><div className="card"><div className="card-title">Round 1 — East</div>{[0,1,2,3].map(i=><ResultRow key={i} round="r1" idx={i} label={`East Series ${i+1}`} team1={bracket.round1[i].team1} team2={bracket.round1[i].team2}/>)}</div><div className="card"><div className="card-title">Round 1 — West</div>{[4,5,6,7].map((i,n)=><ResultRow key={i} round="r1" idx={i} label={`West Series ${n+1}`} team1={bracket.round1[i].team1} team2={bracket.round1[i].team2}/>)}</div></div>
       <div className="grid-2"><div className="card"><div className="card-title">Round 2 — East</div>{[0,1].map(i=><ResultRow key={i} round="r2" idx={i} label={ar2[i].label} team1={ar2[i].team1} team2={ar2[i].team2}/>)}</div><div className="card"><div className="card-title">Round 2 — West</div>{[2,3].map(i=><ResultRow key={i} round="r2" idx={i} label={ar2[i].label} team1={ar2[i].team1} team2={ar2[i].team2}/>)}</div></div>
       <div className="grid-2"><div className="card"><div className="card-title">Conference Finals</div>{[0,1].map(i=><ResultRow key={i} round="r3" idx={i} label={ar3[i].label} team1={ar3[i].team1} team2={ar3[i].team2}/>)}</div><div className="card"><div className="card-title">Stanley Cup Final</div><ResultRow round="r4" idx={0} label={ar4[0].label} team1={ar4[0].team1} team2={ar4[0].team2}/></div></div>
@@ -620,9 +1025,9 @@ function ChangePasswordModal({user,onSave,onClose}){
 function App(){
   const [appState,setAppState]=useState('loading'); // 'loading'|'unconfigured'|'ready'
   const [data,setData]=useState(null);
+  const [poolAuthed,setPoolAuthed]=useState(false);
   const [currentUser,setCurrentUser]=useState(null);
-  const [view,setView]=useState('dashboard');
-  const [changePw,setChangePw]=useState(false);
+  const [view,setView]=useState('pool');
 
   async function loadData(){
     try{
@@ -650,41 +1055,46 @@ function App(){
     }
   }
 
-  async function handleLogin(user){
-    setCurrentUser(user); setView('dashboard');
-    await handleRefresh();
+  function handleLogin(){ setPoolAuthed(true); }
+
+  function handleProfileSelect(user){
+    const needsPicks = !user.picks && data?.bracket?.status === 'open';
+    setCurrentUser(user);
+    setView(needsPicks ? 'picks' : 'pool');
   }
 
-  function handleLogout(){ setCurrentUser(null); }
+  function handleSwitchProfile(){ setCurrentUser(null); }
+
+  function handleSignOut(){ setPoolAuthed(false); setCurrentUser(null); }
+
+  async function handleAddProfile(userData){
+    const created = await dbCreateUser(userData);
+    await loadData();
+    return created;
+  }
 
   async function handleSavePicks(picks){
     await dbSavePicks(currentUser.id, picks);
     await handleRefresh();
-  }
-
-  async function handleChangePassword(newPw){
-    await dbUpdateUser(currentUser.id, {password: newPw});
-    setChangePw(false);
-    await handleRefresh();
+    setView('pool');
   }
 
   if(appState==='loading') return <Spinner message="Connecting to database…"/>;
   if(appState==='unconfigured') return <NotConfigured/>;
-  if(!currentUser) return <LoginPage onLogin={handleLogin}/>;
+  if(!poolAuthed) return <LoginPage onLogin={handleLogin} users={data?.users||[]}/>;
+  if(!currentUser) return <ProfileSelectPage users={data?.users||[]} onSelect={handleProfileSelect} onSignOut={handleSignOut} onAdd={handleAddProfile}/>;
 
   const liveUser = data?.users?.find(u=>u.id===currentUser.id) || currentUser;
+  const needsPicks = !liveUser.picks && data?.bracket?.status === 'open';
 
   return(
     <>
-      <NavBar user={liveUser} view={view} setView={setView} onLogout={handleLogout}/>
-      {view==='dashboard'     &&<DashboardPage     user={liveUser} data={data} setView={setView} onRefresh={handleRefresh}/>}
+      <NavBar user={liveUser} view={view} setView={setView} onSwitchProfile={handleSwitchProfile} onSignOut={handleSignOut} needsPicks={needsPicks}/>
+      {view==='pool'          &&<PoolView          user={liveUser} data={data} onRefresh={handleRefresh} onGoToPicks={()=>setView('picks')}/>}
       {view==='picks'         &&<MyPicksPage        user={liveUser} data={data} onSavePicks={handleSavePicks}/>}
-      {view==='leaderboard'   &&<LeaderboardPage    user={liveUser} data={data}/>}
       {view==='manage-users'  &&liveUser.is_admin&&<ManageUsersPage  data={data} onRefresh={handleRefresh}/>}
       {view==='bracket-setup' &&liveUser.is_admin&&<BracketSetupPage data={data} onRefresh={handleRefresh}/>}
       {view==='results'       &&liveUser.is_admin&&<ResultsPage      data={data} onRefresh={handleRefresh}/>}
-      <button className="corner-btn" onClick={()=>setChangePw(true)}>🔑 Change Password</button>
-      {changePw&&<ChangePasswordModal user={liveUser} onSave={handleChangePassword} onClose={()=>setChangePw(false)}/>}
     </>
   );
 }
