@@ -333,8 +333,8 @@ async function dbLoadAll(poolId) {
     bracket: {
       season:  config.season  || '2025',
       status:  config.status  || 'setup',
-      round1:  config.round1  || DEFAULT_ROUND1,
-      results: config.results || DEFAULT_RESULTS,
+      round1:  (config.round1?.length === 8) ? config.round1 : DEFAULT_ROUND1,
+      results: config.results?.r1 ? config.results : DEFAULT_RESULTS,
     }
   };
 }
