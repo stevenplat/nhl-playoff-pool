@@ -1012,9 +1012,9 @@ function MyPicksPage({user,data,onSavePicks}){
   const [picks,setPicks]=useState(init);
   const [step,setStep]=useState(0);
   const [saving,setSaving]=useState(false);
-  const [saved,setSaved]=useState(false);
+  const [mode,setMode]=useState(user.picks?'overview':'wizard'); // 'wizard'|'overview'
   const [lockedTab,setLockedTab]=useState('r1');
-  useEffect(()=>{setPicks(init());setStep(0);setSaved(false);},[user.id]);
+  useEffect(()=>{setPicks(init());setStep(0);setMode(user.picks?'overview':'wizard');},[user.id]);
 
   const r2t=r2Teams(picks,bracket.round1);
   const r3t=r3Teams(picks);
@@ -1049,9 +1049,36 @@ function MyPicksPage({user,data,onSavePicks}){
     setPick(cur.round,cur.idx,{...(curPick||{}),length:n});
     if(step<totalSteps-1)setTimeout(()=>setStep(s=>s+1),350);
   }
-  async function handleSave(){setSaving(true);await onSavePicks(picks);setSaving(false);setSaved(true);}
+  async function handleFinish(){setSaving(true);await onSavePicks(picks);setSaving(false);setMode('overview');}
 
   const logoSrc=name=>`Assets/League=NHL, Team=${name}.png`;
+  const isLastStep=step===totalSteps-1;
+
+  // shared team card renderer
+  function TeamCard({team,ti,isSel,isOther,accent,onClick}){
+    return(
+      <div onClick={onClick}
+           style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:10,
+             padding:'28px 12px 20px',borderRadius:14,
+             cursor:team?'pointer':'default',userSelect:'none',
+             background:isSel?`rgba(${accent},0.1)`:'var(--bg2)',
+             border:isSel?`2px solid rgb(${accent})`:'1px solid var(--border)',
+             opacity:isOther?0.28:1,
+             transition:'all .18s ease',
+             transform:isSel?'scale(1.03)':'scale(1)',
+           }}>
+        {team?(
+          <>
+            <img src={logoSrc(team)} style={{width:80,height:80,objectFit:'contain'}} onError={e=>{e.target.style.display='none';}}/>
+            <div style={{fontSize:'0.85rem',fontWeight:700,textAlign:'center',color:'var(--text)',lineHeight:1.3}}>{team}</div>
+            {isSel&&<div style={{fontSize:'0.6rem',fontWeight:700,color:`rgb(${accent})`,textTransform:'uppercase',letterSpacing:'1px',marginTop:2}}>Selected ✓</div>}
+          </>
+        ):(
+          <div style={{color:'var(--text3)',fontSize:'0.8rem',height:80,display:'flex',alignItems:'center',justifyContent:'center'}}>TBD</div>
+        )}
+      </div>
+    );
+  }
 
   if(setup)return(
     <div className="page">
@@ -1079,6 +1106,143 @@ function MyPicksPage({user,data,onSavePicks}){
     );
   }
 
+  // ── OVERVIEW ──
+  if(mode==='overview'){
+    const groups=[
+      {label:'Round 1 · Eastern Conference', steps:STEPS.slice(0,4)},
+      {label:'Round 1 · Western Conference', steps:STEPS.slice(4,8)},
+      {label:'Round 2 · Eastern Conference', steps:STEPS.slice(8,10)},
+      {label:'Round 2 · Western Conference', steps:STEPS.slice(10,12)},
+      {label:'Conference Finals',            steps:STEPS.slice(12,14)},
+      {label:'Stanley Cup Final',            steps:STEPS.slice(14,15)},
+    ];
+    return(
+      <div className="page">
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+          <div className="page-title" style={{marginBottom:0}}>Your Picks</div>
+          {bracket.status==='open'&&(
+            <button className="btn btn-ghost btn-sm" onClick={()=>{setStep(0);setMode('wizard');}}>
+              ✏️ Edit Picks
+            </button>
+          )}
+        </div>
+        <div style={{background:'rgba(52,211,153,0.07)',border:'1px solid rgba(52,211,153,0.18)',borderRadius:8,padding:'12px 16px',marginBottom:24,display:'flex',alignItems:'center',gap:10}}>
+          <span style={{color:'var(--green)',fontSize:'1.1rem'}}>✓</span>
+          <span style={{fontSize:'0.83rem',color:'var(--text2)'}}>
+            All {totalSteps} picks submitted.{bracket.status==='open'?' You can edit until picks are locked.':''}
+          </span>
+        </div>
+        {groups.map(g=>(
+          <div key={g.label} style={{marginBottom:20}}>
+            <div className="conf-label">{g.label}</div>
+            <div className="card" style={{padding:0,overflow:'hidden'}}>
+              {g.steps.map((s,i)=>{
+                const pick=picks[s.round]?.[s.idx];
+                const result=bracket.results[s.round]?.[s.idx];
+                const loser=pick?.winner===s.team1?s.team2:s.team1;
+                const correct=result?.winner&&result.winner===pick?.winner;
+                const wrong=result?.winner&&result.winner!==pick?.winner;
+                return(
+                  <div key={i} style={{display:'flex',alignItems:'center',gap:12,padding:'14px 16px',borderBottom:i<g.steps.length-1?'1px solid var(--border)':'none'}}>
+                    <img src={logoSrc(pick?.winner||s.team1)} style={{width:32,height:32,objectFit:'contain',flexShrink:0}} onError={e=>{e.target.style.display='none';}}/>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontWeight:700,color:pick?.winner?'var(--text)':'var(--text3)',fontSize:'0.88rem'}}>{pick?.winner||'No pick'}</div>
+                      <div style={{fontSize:'0.72rem',color:'var(--text3)',marginTop:2}}>
+                        {pick?.length?`in ${pick.length} · over ${loser||'TBD'}`:pick?.winner?'games not picked':'—'}
+                      </div>
+                    </div>
+                    {correct&&<span style={{fontSize:'0.72rem',fontWeight:700,color:'var(--green)',flexShrink:0}}>✓ Correct</span>}
+                    {wrong&&<span style={{fontSize:'0.72rem',fontWeight:700,color:'var(--red)',flexShrink:0}}>✕ Wrong</span>}
+                    {!result?.winner&&pick?.length&&<span style={{fontSize:'0.7rem',color:'var(--text3)',flexShrink:0}}>in {pick.length}</span>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // ── TROPHY STEP (Stanley Cup Final) ──
+  if(isLastStep){
+    const goldAccent='245,166,35';
+    return(
+      <div style={{minHeight:'calc(100vh - 90px)',display:'flex',flexDirection:'column',alignItems:'center',paddingBottom:110}}>
+        {/* Gold hero */}
+        <div style={{width:'100%',background:'linear-gradient(180deg,rgba(245,166,35,0.18) 0%,transparent 100%)',display:'flex',flexDirection:'column',alignItems:'center',padding:'56px 24px 40px',textAlign:'center',borderBottom:'1px solid rgba(245,166,35,0.12)'}}>
+          <div style={{fontSize:'5rem',lineHeight:1,marginBottom:20,filter:'drop-shadow(0 0 32px rgba(245,166,35,0.5))'}}>🏆</div>
+          <div style={{fontSize:'0.65rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'3px',color:'rgba(245,166,35,0.7)',marginBottom:10}}>
+            Stanley Cup Final
+          </div>
+          <div style={{fontSize:'1.5rem',fontWeight:700,color:'#fff',letterSpacing:'-0.5px'}}>Who wins the Cup?</div>
+        </div>
+
+        {/* Step dots */}
+        <div style={{display:'flex',gap:4,marginTop:24,marginBottom:24,flexWrap:'wrap',justifyContent:'center',maxWidth:320,padding:'0 20px'}}>
+          {STEPS.map((s,i)=>{
+            const done=picks[s.round]?.[s.idx]?.winner&&picks[s.round]?.[s.idx]?.length;
+            return <div key={i} style={{width:8,height:8,borderRadius:'50%',background:i===step?`rgb(${goldAccent})`:done?`rgba(${goldAccent},0.45)`:'var(--bg4)',flexShrink:0}}/>;
+          })}
+        </div>
+
+        {/* Team cards */}
+        <div style={{display:'flex',gap:10,width:'100%',maxWidth:500,padding:'0 20px',marginBottom:8}}>
+          {[cur.team1,cur.team2].map((team,ti)=>{
+            const isSel=curPick?.winner===team;
+            const isOther=!!(curPick?.winner&&curPick.winner!==team);
+            return <TeamCard key={team||ti} team={team} ti={ti} isSel={isSel} isOther={isOther} accent={goldAccent} onClick={()=>handleTeamClick(team)}/>;
+          })}
+        </div>
+        <div style={{fontSize:'0.7rem',color:'rgba(245,166,35,0.5)',letterSpacing:'2px',fontWeight:600,marginBottom:24}}>vs</div>
+
+        {/* Games picker */}
+        <div style={{minHeight:72,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',marginBottom:32}}>
+          {curPick?.winner?(
+            <>
+              <div style={{fontSize:'0.68rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'1.5px',color:'rgba(245,166,35,0.6)',marginBottom:14}}>How many games?</div>
+              <div style={{display:'flex',gap:10}}>
+                {[4,5,6,7].map(n=>(
+                  <button key={n} onClick={()=>setPick(cur.round,cur.idx,{...(curPick||{}),length:n})}
+                          style={{width:54,height:54,borderRadius:12,fontSize:'1.1rem',fontWeight:700,
+                            cursor:'pointer',fontFamily:'inherit',transition:'all .15s',
+                            background:curPick?.length===n?`rgb(${goldAccent})`:'var(--bg3)',
+                            color:curPick?.length===n?'#000':'var(--text2)',
+                            border:curPick?.length===n?`2px solid rgb(${goldAccent})`:'1px solid var(--border)',
+                            transform:curPick?.length===n?'scale(1.08)':'scale(1)',
+                          }}>
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </>
+          ):(
+            <div style={{fontSize:'0.78rem',color:'rgba(245,166,35,0.5)',textAlign:'center'}}>Tap a team to pick the Cup champion</div>
+          )}
+        </div>
+
+        {/* Finish button */}
+        {curPick?.winner&&curPick?.length&&(
+          <button onClick={handleFinish} disabled={saving}
+                  style={{padding:'16px 48px',borderRadius:12,fontSize:'1rem',fontWeight:700,
+                    cursor:'pointer',fontFamily:'inherit',transition:'all .2s',
+                    background:`linear-gradient(135deg, rgb(${goldAccent}), #e8930a)`,
+                    color:'#000',border:'none',
+                    boxShadow:`0 4px 24px rgba(${goldAccent},0.4)`,
+                    transform:saving?'scale(0.97)':'scale(1)',
+                    marginBottom:16,
+                  }}>
+            {saving?'Saving…':'🏆 Finish'}
+          </button>
+        )}
+
+        {/* Back */}
+        <button className="btn btn-ghost btn-sm" onClick={()=>setStep(s=>s-1)} style={{color:'var(--text3)',marginTop:4}}>← Back</button>
+      </div>
+    );
+  }
+
+  // ── NORMAL WIZARD STEPS ──
   return(
     <div className="page" style={{maxWidth:540,paddingTop:28}}>
 
@@ -1095,7 +1259,6 @@ function MyPicksPage({user,data,onSavePicks}){
         <div style={{height:3,background:'var(--bg3)',borderRadius:4,overflow:'hidden'}}>
           <div style={{height:'100%',width:`${(completedCount/totalSteps)*100}%`,background:'var(--purple)',borderRadius:4,transition:'width .4s ease'}}/>
         </div>
-        {/* Step dots */}
         <div style={{display:'flex',gap:4,marginTop:10,flexWrap:'wrap'}}>
           {STEPS.map((s,i)=>{
             const done=picks[s.round]?.[s.idx]?.winner&&picks[s.round]?.[s.idx]?.length;
@@ -1122,28 +1285,7 @@ function MyPicksPage({user,data,onSavePicks}){
         {[cur.team1,cur.team2].map((team,ti)=>{
           const isSel=curPick?.winner===team;
           const isOther=!!(curPick?.winner&&curPick.winner!==team);
-          return(
-            <div key={team||ti} onClick={()=>handleTeamClick(team)}
-                 style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:10,
-                   padding:'28px 12px 20px',borderRadius:14,
-                   cursor:team?'pointer':'default',userSelect:'none',
-                   background:isSel?'rgba(124,92,252,0.1)':'var(--bg2)',
-                   border:isSel?'2px solid var(--purple)':'1px solid var(--border)',
-                   opacity:isOther?0.28:1,
-                   transition:'all .18s ease',
-                   transform:isSel?'scale(1.03)':'scale(1)',
-                 }}>
-              {team?(
-                <>
-                  <img src={logoSrc(team)} style={{width:80,height:80,objectFit:'contain'}} onError={e=>{e.target.style.display='none';}}/>
-                  <div style={{fontSize:'0.85rem',fontWeight:700,textAlign:'center',color:'var(--text)',lineHeight:1.3}}>{team}</div>
-                  {isSel&&<div style={{fontSize:'0.6rem',fontWeight:700,color:'var(--purple)',textTransform:'uppercase',letterSpacing:'1px',marginTop:2}}>Selected ✓</div>}
-                </>
-              ):(
-                <div style={{color:'var(--text3)',fontSize:'0.8rem',height:80,display:'flex',alignItems:'center',justifyContent:'center'}}>TBD</div>
-              )}
-            </div>
-          );
+          return <TeamCard key={team||ti} team={team} ti={ti} isSel={isSel} isOther={isOther} accent="124,92,252" onClick={()=>handleTeamClick(team)}/>;
         })}
       </div>
 
@@ -1154,9 +1296,7 @@ function MyPicksPage({user,data,onSavePicks}){
       <div style={{minHeight:72,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',marginBottom:36}}>
         {curPick?.winner?(
           <>
-            <div style={{fontSize:'0.68rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'1.5px',color:'var(--text3)',marginBottom:14}}>
-              How many games?
-            </div>
+            <div style={{fontSize:'0.68rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'1.5px',color:'var(--text3)',marginBottom:14}}>How many games?</div>
             <div style={{display:'flex',gap:10}}>
               {[4,5,6,7].map(n=>(
                 <button key={n} onClick={()=>handleGamesClick(n)}
@@ -1173,46 +1313,32 @@ function MyPicksPage({user,data,onSavePicks}){
             </div>
           </>
         ):(
-          <div style={{fontSize:'0.78rem',color:'var(--text3)',textAlign:'center'}}>
-            Tap a team to pick the winner
-          </div>
+          <div style={{fontSize:'0.78rem',color:'var(--text3)',textAlign:'center'}}>Tap a team to pick the winner</div>
         )}
       </div>
 
       {/* Navigation */}
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-        <button className="btn btn-ghost" onClick={()=>setStep(s=>Math.max(0,s-1))} disabled={step===0} style={{minWidth:90}}>
-          ← Back
-        </button>
+        <button className="btn btn-ghost" onClick={()=>setStep(s=>Math.max(0,s-1))} disabled={step===0} style={{minWidth:90}}>← Back</button>
         <div style={{display:'flex',gap:8,alignItems:'center'}}>
-          {!curPick?.winner&&step<totalSteps-1&&(
-            <button className="btn btn-ghost btn-sm" onClick={()=>setStep(s=>s+1)}
-                    style={{color:'var(--text3)',fontSize:'0.72rem'}}>
-              Skip
-            </button>
+          {!curPick?.winner&&(
+            <button className="btn btn-ghost btn-sm" onClick={()=>setStep(s=>s+1)} style={{color:'var(--text3)',fontSize:'0.72rem'}}>Skip</button>
           )}
-          {step===totalSteps-1?(
-            <button className="btn btn-gold" onClick={handleSave} disabled={saving}
-                    style={{minWidth:140,opacity:allDone?1:0.5}}>
-              {saving?'Saving…':saved?'Saved ✓':'Submit Picks'}
-            </button>
-          ):(
-            <button onClick={()=>setStep(s=>s+1)} disabled={!curPick?.winner}
-                    style={{minWidth:90,padding:'9px 18px',borderRadius:8,fontSize:'0.85rem',fontWeight:600,
-                      cursor:curPick?.winner?'pointer':'default',fontFamily:'inherit',transition:'all .15s',
-                      background:curPick?.winner?'var(--purple)':'var(--bg3)',
-                      color:curPick?.winner?'#fff':'var(--text3)',
-                      border:'none',opacity:curPick?.winner?1:0.45}}>
-              Next →
-            </button>
-          )}
+          <button onClick={()=>setStep(s=>s+1)} disabled={!curPick?.winner}
+                  style={{minWidth:90,padding:'9px 18px',borderRadius:8,fontSize:'0.85rem',fontWeight:600,
+                    cursor:curPick?.winner?'pointer':'default',fontFamily:'inherit',transition:'all .15s',
+                    background:curPick?.winner?'var(--purple)':'var(--bg3)',
+                    color:curPick?.winner?'#fff':'var(--text3)',
+                    border:'none',opacity:curPick?.winner?1:0.45}}>
+            Next →
+          </button>
         </div>
       </div>
 
       {/* Submit shortcut once all done */}
-      {allDone&&step<totalSteps-1&&!saved&&(
+      {allDone&&(
         <div style={{marginTop:20,textAlign:'center'}}>
-          <button className="btn btn-gold btn-sm" onClick={handleSave} disabled={saving}>
+          <button className="btn btn-gold btn-sm" onClick={handleFinish} disabled={saving}>
             {saving?'Saving…':'Submit All Picks'}
           </button>
         </div>
