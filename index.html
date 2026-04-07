@@ -1281,6 +1281,17 @@ function BracketSetupPage({data,onRefresh}){
   const [saving,setSaving]=useState(false);const [importing,setImporting]=useState(false);
   function setTeam(idx,field,val){setBracket(p=>{const r1=[...p.round1];r1[idx]={...r1[idx],[field]:val};return{...p,round1:r1};});}
   async function handleSave(){setSaving(true);await dbSaveConfig(bracket,data.poolId);await onRefresh();setSaving(false);setMsg('Bracket saved!');setMsgType('success');setTimeout(()=>setMsg(''),3000);}
+  async function handleStatusChange(newStatus){
+    const updated={...bracket,status:newStatus};
+    setBracket(updated);
+    setSaving(true);
+    await dbSaveConfig(updated,data.poolId);
+    await onRefresh();
+    setSaving(false);
+    const labels={setup:'Setup',open:'Open — accepting picks',locked:'Locked',complete:'Complete'};
+    setMsg(`Status set to "${labels[newStatus]}" and saved.`);setMsgType('success');
+    setTimeout(()=>setMsg(''),4000);
+  }
   async function handleImportNHL(){
     setImporting(true);setMsg('');
     try{
@@ -1305,10 +1316,10 @@ function BracketSetupPage({data,onRefresh}){
         </button>
       </div>
       {msg&&<Alert type={msgType}>{msg}</Alert>}
-      <Alert type="info">Enter the 16 playoff teams manually, or use <strong>Import from NHL</strong> to auto-fill from the official bracket. Set status to "Open" when ready for picks.</Alert>
+      <Alert type="info">Enter the 16 playoff teams, then save the bracket. Changing the status saves immediately and takes effect for all players right away.</Alert>
       <div className="card mb-3">
-        <div className="card-title">Pool Status</div>
-        <div className="flex gap-2 flex-wrap">{statusOpts.map(o=><button key={o.v} onClick={()=>setBracket(p=>({...p,status:o.v}))} style={{background:bracket.status===o.v?'var(--grad-purple)':'var(--bg3)',border:'1px solid',borderColor:bracket.status===o.v?'var(--purple)':'var(--border2)',color:bracket.status===o.v?'#fff':'var(--text2)',padding:'9px 18px',borderRadius:'10px',cursor:'pointer',fontSize:'0.86rem',fontWeight:600,fontFamily:'inherit'}}>{o.l} <span style={{opacity:0.7,fontWeight:400,fontSize:'0.78rem'}}>· {o.d}</span></button>)}</div>
+        <div className="card-title">Pool Status <span style={{fontSize:'0.72rem',fontWeight:400,color:'var(--text3)',marginLeft:6}}>— changes save instantly</span></div>
+        <div className="flex gap-2 flex-wrap">{statusOpts.map(o=><button key={o.v} onClick={()=>handleStatusChange(o.v)} disabled={saving} style={{background:bracket.status===o.v?'var(--grad-purple)':'var(--bg3)',border:'1px solid',borderColor:bracket.status===o.v?'var(--purple)':'var(--border2)',color:bracket.status===o.v?'#fff':'var(--text2)',padding:'9px 18px',borderRadius:'10px',cursor:'pointer',fontSize:'0.86rem',fontWeight:600,fontFamily:'inherit'}}>{o.l} <span style={{opacity:0.7,fontWeight:400,fontSize:'0.78rem'}}>· {o.d}</span></button>)}</div>
       </div>
       <div className="grid-2">
         <div className="card"><div className="card-title">Eastern Conference — Round 1</div>{[0,1,2,3].map(i=><div key={i} style={{marginBottom:'16px'}}><div className="form-label">East Series {i+1}</div><div className="flex gap-2"><input className="form-input" placeholder="Higher seed" value={bracket.round1[i].team1} onChange={e=>setTeam(i,'team1',e.target.value)}/><input className="form-input" placeholder="Lower seed" value={bracket.round1[i].team2} onChange={e=>setTeam(i,'team2',e.target.value)}/></div></div>)}</div>
