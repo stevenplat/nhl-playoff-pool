@@ -243,7 +243,7 @@
     @keyframes heroFloat3 { 0%,100%{transform:rotate(-8deg)} 50%{transform:translateY(-14px) rotate(-5deg)} }
     @keyframes heroFloat4 { 0%,100%{transform:translateY(-50%) rotate(14deg)} 50%{transform:translateY(calc(-50% - 9px)) rotate(11deg)} }
     .pool-hero { position:relative; width:100%; overflow:hidden; background:transparent; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:64px 24px 56px; min-height:260px; }
-    .pool-hero-name { font-size:5.5rem; font-weight:400; letter-spacing:1px; line-height:1; color:#fff; text-transform:uppercase; font-family:'Faster One',cursive; position:relative; z-index:2; text-align:center; }
+    .pool-hero-name { font-size:5.5rem; font-weight:400; letter-spacing:1px; line-height:1; color:#b5ccdb; text-transform:uppercase; font-family:'Faster One',cursive; position:relative; z-index:2; text-align:center; }
     .pool-hero-meta { font-size:1rem; color:rgba(255,255,255,0.38); margin-top:12px; font-weight:400; position:relative; z-index:2; text-align:center; letter-spacing:0.2px; }
     .hero-logo { position:absolute; border-radius:18px; display:flex; align-items:center; justify-content:center; overflow:hidden; z-index:1; }
     .hero-logo svg { width:56px; height:56px; }
@@ -320,12 +320,18 @@ async function dbLoadAll(poolId) {
   if (adminRes.data && !users.find(u => u.id === 'admin')) {
     users = [adminRes.data, ...users];
   }
-  const config = configRes.data || { pool_id:poolId, season:'2025', status:'setup', round1: DEFAULT_ROUND1, results: DEFAULT_RESULTS };
+  let config = configRes.data;
+  if (!config) {
+    // First time this pool has been loaded — create a config row so saves are always UPDATEs
+    const defaults = { pool_id:poolId, season:'2025', status:'setup', round1:DEFAULT_ROUND1, results:DEFAULT_RESULTS, updated_at:new Date().toISOString() };
+    const { data: created } = await sb.from('pool_config').insert([defaults]).select().single();
+    config = created || defaults;
+  }
   return {
     poolId,
     users,
     bracket: {
-      season:  config.season  || '2026',
+      season:  config.season  || '2025',
       status:  config.status  || 'setup',
       round1:  config.round1  || DEFAULT_ROUND1,
       results: config.results || DEFAULT_RESULTS,
@@ -335,14 +341,8 @@ async function dbLoadAll(poolId) {
 
 async function dbSaveConfig(bracket, poolId) {
   const payload = { pool_id:poolId, season:bracket.season, status:bracket.status, round1:bracket.round1, results:bracket.results, updated_at:new Date().toISOString() };
-  const { data: existing, error: selErr } = await sb.from('pool_config').select('pool_id').eq('pool_id', poolId).maybeSingle();
-  if (selErr) throw selErr;
-  let error;
-  if (existing) {
-    ({ error } = await sb.from('pool_config').update(payload).eq('pool_id', poolId));
-  } else {
-    ({ error } = await sb.from('pool_config').insert([payload]));
-  }
+  // Row is guaranteed to exist (created in dbLoadAll on first visit), so UPDATE is safe
+  const { error } = await sb.from('pool_config').update(payload).eq('pool_id', poolId);
   if (error) throw error;
 }
 
