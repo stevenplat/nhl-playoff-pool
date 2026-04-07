@@ -916,18 +916,55 @@ function NavBar({user,view,setView,onSwitchProfile,onSignOut,needsPicks}){
   );
 }
 
+// ── ALL NHL TEAMS ──
+const ALL_TEAMS=[
+  {src:'Assets/League=NHL, Team=Anaheim Ducks.png',           bg:'#1a0a00', glow:'rgba(252,76,2,0.65)',    glowFar:'rgba(252,76,2,0.2)'},
+  {src:'Assets/League=NHL, Team=Arizona Coyotes.png',         bg:'#1a0008', glow:'rgba(134,38,51,0.65)',   glowFar:'rgba(134,38,51,0.2)'},
+  {src:'Assets/League=NHL, Team=Boston Bruins.png',           bg:'#1a1400', glow:'rgba(252,181,20,0.65)',  glowFar:'rgba(252,181,20,0.2)'},
+  {src:'Assets/League=NHL, Team=Buffalo Sabres.png',          bg:'#00051a', glow:'rgba(0,48,135,0.65)',    glowFar:'rgba(0,48,135,0.2)'},
+  {src:'Assets/League=NHL, Team=Calgary Flames.png',          bg:'#1a0002', glow:'rgba(210,0,28,0.65)',    glowFar:'rgba(210,0,28,0.2)'},
+  {src:'Assets/League=NHL, Team=Carolina Hurricanes.png',     bg:'#1a0005', glow:'rgba(200,16,46,0.65)',   glowFar:'rgba(200,16,46,0.2)'},
+  {src:'Assets/League=NHL, Team=Chicago Blackhawks.png',      bg:'#1a0005', glow:'rgba(200,16,46,0.65)',   glowFar:'rgba(200,16,46,0.2)'},
+  {src:'Assets/League=NHL, Team=Colorado Avalanche.png',      bg:'#180814', glow:'rgba(111,38,61,0.6)',    glowFar:'rgba(111,38,61,0.2)'},
+  {src:'Assets/League=NHL, Team=Columbus Blue Jackets.png',   bg:'#00051a', glow:'rgba(0,38,84,0.65)',     glowFar:'rgba(0,38,84,0.2)'},
+  {src:'Assets/League=NHL, Team=Dallas Stars.png',            bg:'#001a0e', glow:'rgba(0,104,71,0.65)',    glowFar:'rgba(0,104,71,0.2)'},
+  {src:'Assets/League=NHL, Team=Detroit Red Wings.png',       bg:'#1a0004', glow:'rgba(186,12,47,0.65)',   glowFar:'rgba(186,12,47,0.2)'},
+  {src:'Assets/League=NHL, Team=Edmonton Oilers.png',         bg:'#001030', glow:'rgba(209,69,32,0.65)',   glowFar:'rgba(209,69,32,0.2)'},
+  {src:'Assets/League=NHL, Team=Florida Panthers.png',        bg:'#1a0005', glow:'rgba(185,15,40,0.65)',   glowFar:'rgba(185,15,40,0.2)'},
+  {src:'Assets/League=NHL, Team=Los Angeles Kings.png',       bg:'#111111', glow:'rgba(162,170,173,0.45)', glowFar:'rgba(162,170,173,0.15)'},
+  {src:'Assets/League=NHL, Team=Minnesota Wild.png',          bg:'#0a2419', glow:'rgba(18,71,52,0.7)',     glowFar:'rgba(18,71,52,0.22)'},
+  {src:'Assets/League=NHL, Team=Montreal Canadiens.png',      bg:'#1a0006', glow:'rgba(175,30,45,0.65)',   glowFar:'rgba(175,30,45,0.2)'},
+  {src:'Assets/League=NHL, Team=Nashville Predators.png',     bg:'#1a1200', glow:'rgba(255,184,28,0.65)',  glowFar:'rgba(255,184,28,0.2)'},
+  {src:'Assets/League=NHL, Team=New Jersey Devils.png',       bg:'#1a0005', glow:'rgba(206,17,38,0.65)',   glowFar:'rgba(206,17,38,0.2)'},
+  {src:'Assets/League=NHL, Team=New York Islanders.png',      bg:'#00081a', glow:'rgba(0,83,155,0.65)',    glowFar:'rgba(0,83,155,0.2)'},
+  {src:'Assets/League=NHL, Team=New York Rangers.png',        bg:'#00051a', glow:'rgba(0,56,168,0.65)',    glowFar:'rgba(0,56,168,0.2)'},
+  {src:'Assets/League=NHL, Team=Ottawa Senators.png',         bg:'#1a0005', glow:'rgba(182,27,45,0.65)',   glowFar:'rgba(182,27,45,0.2)'},
+  {src:'Assets/League=NHL, Team=Philadelphia Flyers.png',     bg:'#1a0900', glow:'rgba(247,73,2,0.65)',    glowFar:'rgba(247,73,2,0.2)'},
+  {src:'Assets/League=NHL, Team=Pittsburgh Penguins.png',     bg:'#1a1200', glow:'rgba(252,181,20,0.65)',  glowFar:'rgba(252,181,20,0.2)'},
+  {src:'Assets/League=NHL, Team=San Jose Sharks.png',         bg:'#001a22', glow:'rgba(0,109,128,0.65)',   glowFar:'rgba(243,136,11,0.18)'},
+  {src:'Assets/League=NHL, Team=Seattle Kraken.png',          bg:'#001016', glow:'rgba(53,96,130,0.65)',   glowFar:'rgba(53,96,130,0.2)'},
+  {src:'Assets/League=NHL, Team=St. Louis Blues.png',         bg:'#00051a', glow:'rgba(0,47,135,0.65)',    glowFar:'rgba(0,47,135,0.2)'},
+  {src:'Assets/League=NHL, Team=Tampa Bay Lightning.png',     bg:'#00051a', glow:'rgba(0,40,104,0.65)',    glowFar:'rgba(0,40,104,0.2)'},
+  {src:'Assets/League=NHL, Team=Toronto Maple Leafs.png',     bg:'#00051a', glow:'rgba(0,32,91,0.65)',     glowFar:'rgba(0,32,91,0.2)'},
+  {src:'Assets/League=NHL, Team=Utah Hockey Club.png',        bg:'#00081a', glow:'rgba(52,88,132,0.65)',   glowFar:'rgba(52,88,132,0.2)'},
+  {src:'Assets/League=NHL, Team=Vancouver Canucks.png',       bg:'#00051a', glow:'rgba(0,32,91,0.65)',     glowFar:'rgba(10,80,30,0.2)'},
+  {src:'Assets/League=NHL, Team=Vegas Golden Knights.png',    bg:'#141008', glow:'rgba(180,151,90,0.65)',  glowFar:'rgba(180,151,90,0.2)'},
+  {src:'Assets/League=NHL, Team=Washington Capitals.png',     bg:'#1a0005', glow:'rgba(166,25,46,0.65)',   glowFar:'rgba(166,25,46,0.2)'},
+  {src:'Assets/League=NHL, Team=Winnipeg Jets.png',           bg:'#00031a', glow:'rgba(4,30,66,0.65)',     glowFar:'rgba(4,30,66,0.2)'},
+];
+
+function pickRandom4(){
+  const shuffled=[...ALL_TEAMS].sort(()=>Math.random()-0.5);
+  return shuffled.slice(0,4);
+}
+
 // ── POOL HERO ──
 function PoolHero({user,myEntry,scored,bracket,onGoToPicks}){
   const pickerCount=scored.filter(u=>u.picks).length;
   const r=myEntry?.rank;
   const suffix=r===1?'st':r===2?'nd':r===3?'rd':'th';
   const rankText=r?`${r}${suffix} of ${pickerCount}`:bracket.status==='open'?'No picks submitted yet':'';
-  const logos=[
-    {src:'Assets/League=NHL, Team=Minnesota Wild.svg',     bg:'#0a2419', glow:'rgba(18,71,52,0.7)',   glowFar:'rgba(18,71,52,0.22)'},
-    {src:'Assets/League=NHL, Team=Edmonton Oilers.svg',    bg:'#001030', glow:'rgba(209,69,32,0.65)', glowFar:'rgba(209,69,32,0.2)'},
-    {src:'Assets/League=NHL, Team=Colorado Avalanche.svg', bg:'#180814', glow:'rgba(111,38,61,0.6)',  glowFar:'rgba(111,38,61,0.2)'},
-    {src:'Assets/League=NHL, Team=San Jose Sharks.svg',    bg:'#001a22', glow:'rgba(0,109,128,0.65)', glowFar:'rgba(243,136,11,0.18)'},
-  ];
+  const logos=React.useMemo(()=>pickRandom4(),[]);
   return(
     <div className="pool-hero">
       {logos.map((l,i)=>(
