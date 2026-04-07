@@ -382,43 +382,41 @@ async function nhlFetchPlayoff(season) {
   const res = await fetch(`${NHL_API}/playoff-bracket/${season}`);
   if (!res.ok) throw new Error(`NHL API ${res.status}`);
   const data = await res.json();
-  if (!data.series?.length) throw new Error('No playoff data for this season yet.');
+  if (!data.rounds?.length) throw new Error('No playoff data for this season yet.');
   return data;
 }
 
 function nhlTeamName(team) {
   if (!team) return '';
-  // Use city + common name for clarity: "Toronto Maple Leafs"
   return team.name?.default || team.commonName?.default || team.abbrev || '';
 }
 
-function nhlParseTeams(series) {
-  const r1 = series
-    .filter(s => s.playoffRound === 1)
+function nhlParseTeams(rounds) {
+  const r1 = [...(rounds.find(r => r.roundNumber === 1)?.series || [])]
     .sort((a, b) => a.seriesLetter.localeCompare(b.seriesLetter));
   // NHL convention: series A-D = East, E-H = West
   return r1.map((s, i) => ({
     id: i,
-    team1: nhlTeamName(s.topSeedTeam),
-    team2: nhlTeamName(s.bottomSeedTeam),
+    team1: nhlTeamName(s.matchup?.topSeed),
+    team2: nhlTeamName(s.matchup?.bottomSeed),
     conf: i < 4 ? 'East' : 'West',
   }));
 }
 
-function nhlParseResults(series) {
+function nhlParseResults(rounds) {
   const roundKeys = ['r1','r2','r3','r4'];
   const sizes = [8, 4, 2, 1];
   const results = { r1: Array(8).fill(null), r2: Array(4).fill(null), r3: Array(2).fill(null), r4: Array(1).fill(null) };
   [1,2,3,4].forEach(round => {
-    const roundSeries = series
-      .filter(s => s.playoffRound === round)
-      .sort((a, b) => a.seriesLetter.localeCompare(b.seriesLetter));
+    const roundData = rounds.find(r => r.roundNumber === round);
+    if (!roundData) return;
+    const roundSeries = [...roundData.series].sort((a, b) => a.seriesLetter.localeCompare(b.seriesLetter));
     roundSeries.forEach((s, idx) => {
       if (idx >= sizes[round-1]) return;
       const topW = s.topSeedWins || 0;
       const botW = s.bottomSeedWins || 0;
       if (topW >= 4 || botW >= 4) {
-        const winnerTeam = topW > botW ? s.topSeedTeam : s.bottomSeedTeam;
+        const winnerTeam = topW > botW ? s.matchup?.topSeed : s.matchup?.bottomSeed;
         results[roundKeys[round-1]][idx] = {
           winner: nhlTeamName(winnerTeam),
           length: topW + botW,
@@ -1577,7 +1575,7 @@ function BracketSetupPage({data,onRefresh}){
     setImporting(true);setMsg('');
     try{
       const nhl=await nhlFetchPlayoff(bracket.season);
-      const round1=nhlParseTeams(nhl.series);
+      const round1=nhlParseTeams(nhl.rounds);
       if(round1.some(s=>s.team1||s.team2)){
         setBracket(p=>({...p,round1}));
         setMsg(`Teams imported from NHL ${bracket.season} bracket — review and save.`);setMsgType('success');
@@ -1628,7 +1626,7 @@ function ResultsPage({data,onRefresh}){
     setSyncing(true);setMsg('');
     try{
       const nhl=await nhlFetchPlayoff(bracket.season);
-      const synced=nhlParseResults(nhl.series);
+      const synced=nhlParseResults(nhl.rounds);
       const completed=Object.values(synced).flat().filter(Boolean).length;
       if(completed===0){setMsg('No completed series found yet — check back once the playoffs start.');setMsgType('warn');}
       else{setResults(synced);setMsg(`Synced ${completed} completed series from NHL. Review and save.`);setMsgType('success');}
