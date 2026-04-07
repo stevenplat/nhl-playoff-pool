@@ -320,7 +320,7 @@ async function dbLoadAll(poolId) {
   if (adminRes.data && !users.find(u => u.id === 'admin')) {
     users = [adminRes.data, ...users];
   }
-  const config = configRes.data || { pool_id:poolId, season:'2026', status:'setup', round1: DEFAULT_ROUND1, results: DEFAULT_RESULTS };
+  const config = configRes.data || { pool_id:poolId, season:'2025', status:'setup', round1: DEFAULT_ROUND1, results: DEFAULT_RESULTS };
   return {
     poolId,
     users,
@@ -382,7 +382,7 @@ async function nhlFetchPlayoff(season) {
   const res = await fetch(`${NHL_API}/playoff-bracket/${season}`);
   if (!res.ok) throw new Error(`NHL API ${res.status}`);
   const data = await res.json();
-  if (!data.rounds?.length) throw new Error('No playoff data for this season yet.');
+  if (!data.series?.length) throw new Error('No playoff data for this season yet.');
   return data;
 }
 
@@ -391,32 +391,33 @@ function nhlTeamName(team) {
   return team.name?.default || team.commonName?.default || team.abbrev || '';
 }
 
-function nhlParseTeams(rounds) {
-  const r1 = [...(rounds.find(r => r.roundNumber === 1)?.series || [])]
+function nhlParseTeams(series) {
+  const r1 = series
+    .filter(s => s.playoffRound === 1)
     .sort((a, b) => a.seriesLetter.localeCompare(b.seriesLetter));
   // NHL convention: series A-D = East, E-H = West
   return r1.map((s, i) => ({
     id: i,
-    team1: nhlTeamName(s.matchup?.topSeed),
-    team2: nhlTeamName(s.matchup?.bottomSeed),
+    team1: nhlTeamName(s.topSeedTeam),
+    team2: nhlTeamName(s.bottomSeedTeam),
     conf: i < 4 ? 'East' : 'West',
   }));
 }
 
-function nhlParseResults(rounds) {
+function nhlParseResults(series) {
   const roundKeys = ['r1','r2','r3','r4'];
   const sizes = [8, 4, 2, 1];
   const results = { r1: Array(8).fill(null), r2: Array(4).fill(null), r3: Array(2).fill(null), r4: Array(1).fill(null) };
   [1,2,3,4].forEach(round => {
-    const roundData = rounds.find(r => r.roundNumber === round);
-    if (!roundData) return;
-    const roundSeries = [...roundData.series].sort((a, b) => a.seriesLetter.localeCompare(b.seriesLetter));
+    const roundSeries = series
+      .filter(s => s.playoffRound === round)
+      .sort((a, b) => a.seriesLetter.localeCompare(b.seriesLetter));
     roundSeries.forEach((s, idx) => {
       if (idx >= sizes[round-1]) return;
       const topW = s.topSeedWins || 0;
       const botW = s.bottomSeedWins || 0;
       if (topW >= 4 || botW >= 4) {
-        const winnerTeam = topW > botW ? s.matchup?.topSeed : s.matchup?.bottomSeed;
+        const winnerTeam = topW > botW ? s.topSeedTeam : s.bottomSeedTeam;
         results[roundKeys[round-1]][idx] = {
           winner: nhlTeamName(winnerTeam),
           length: topW + botW,
@@ -1575,7 +1576,7 @@ function BracketSetupPage({data,onRefresh}){
     setImporting(true);setMsg('');
     try{
       const nhl=await nhlFetchPlayoff(bracket.season);
-      const round1=nhlParseTeams(nhl.rounds);
+      const round1=nhlParseTeams(nhl.series);
       if(round1.some(s=>s.team1||s.team2)){
         setBracket(p=>({...p,round1}));
         setMsg(`Teams imported from NHL ${bracket.season} bracket — review and save.`);setMsgType('success');
@@ -1596,6 +1597,13 @@ function BracketSetupPage({data,onRefresh}){
       </div>
       {msg&&<Alert type={msgType}>{msg}</Alert>}
       <Alert type="info">Enter the 16 playoff teams, then save the bracket. Changing the status saves immediately and takes effect for all players right away.</Alert>
+      <div className="card mb-3">
+        <div className="card-title">Season</div>
+        <div className="flex gap-2 items-center">
+          <input className="form-input" style={{maxWidth:120}} placeholder="e.g. 2025" value={bracket.season} onChange={e=>setBracket(p=>({...p,season:e.target.value}))}/>
+          <span style={{color:'var(--text3)',fontSize:'0.82rem'}}>Used for NHL import — set to the year playoffs end (e.g. 2025 for the 2024-25 season)</span>
+        </div>
+      </div>
       <div className="card mb-3">
         <div className="card-title">Pool Status <span style={{fontSize:'0.72rem',fontWeight:400,color:'var(--text3)',marginLeft:6}}>— changes save instantly</span></div>
         <div className="flex gap-2 flex-wrap">{statusOpts.map(o=><button key={o.v} onClick={()=>handleStatusChange(o.v)} disabled={saving} style={{background:bracket.status===o.v?'var(--grad-purple)':'var(--bg3)',border:'1px solid',borderColor:bracket.status===o.v?'var(--purple)':'var(--border2)',color:bracket.status===o.v?'#fff':'var(--text2)',padding:'9px 18px',borderRadius:'10px',cursor:'pointer',fontSize:'0.86rem',fontWeight:600,fontFamily:'inherit'}}>{o.l} <span style={{opacity:0.7,fontWeight:400,fontSize:'0.78rem'}}>· {o.d}</span></button>)}</div>
@@ -1626,7 +1634,7 @@ function ResultsPage({data,onRefresh}){
     setSyncing(true);setMsg('');
     try{
       const nhl=await nhlFetchPlayoff(bracket.season);
-      const synced=nhlParseResults(nhl.rounds);
+      const synced=nhlParseResults(nhl.series);
       const completed=Object.values(synced).flat().filter(Boolean).length;
       if(completed===0){setMsg('No completed series found yet — check back once the playoffs start.');setMsgType('warn');}
       else{setResults(synced);setMsg(`Synced ${completed} completed series from NHL. Review and save.`);setMsgType('success');}
