@@ -9,7 +9,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Faster+One&display=swap');
 
     :root {
       --bg:       #0d0d0d;
@@ -243,7 +243,7 @@
     @keyframes heroFloat3 { 0%,100%{transform:rotate(-8deg)} 50%{transform:translateY(-14px) rotate(-5deg)} }
     @keyframes heroFloat4 { 0%,100%{transform:translateY(-50%) rotate(14deg)} 50%{transform:translateY(calc(-50% - 9px)) rotate(11deg)} }
     .pool-hero { position:relative; width:100%; overflow:hidden; background:transparent; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:64px 24px 56px; min-height:260px; }
-    .pool-hero-name { font-size:5.5rem; font-weight:700; letter-spacing:-3px; line-height:1; color:#fff; text-transform:uppercase; position:relative; z-index:2; text-align:center; }
+    .pool-hero-name { font-size:5.5rem; font-weight:400; letter-spacing:1px; line-height:1; color:#fff; text-transform:uppercase; font-family:'Faster One',cursive; position:relative; z-index:2; text-align:center; }
     .pool-hero-meta { font-size:1rem; color:rgba(255,255,255,0.38); margin-top:12px; font-weight:400; position:relative; z-index:2; text-align:center; letter-spacing:0.2px; }
     .hero-logo { position:absolute; border-radius:18px; display:flex; align-items:center; justify-content:center; overflow:hidden; z-index:1; }
     .hero-logo svg { width:56px; height:56px; }
@@ -253,7 +253,7 @@
     .hero-logo-4 { width:78px; height:78px; right:7%; top:48%; animation:heroFloat4 5.5s ease-in-out infinite; }
 
     @media(max-width:700px) {
-      .pool-hero-name { font-size:3.2rem; letter-spacing:-2px; }
+      .pool-hero-name { font-size:3.2rem; letter-spacing:1px; }
       .pool-hero { min-height:200px; padding:48px 16px 40px; }
       .hero-logo { border-radius:14px; }
       .hero-logo svg { width:40px; height:40px; }
