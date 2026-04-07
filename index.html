@@ -35,7 +35,7 @@
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'IBM Plex Sans', 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+    body { font-family: 'IBM Plex Sans', 'Inter', system-ui, sans-serif; background: radial-gradient(ellipse 120% 500px at 50% 280px, rgba(0,60,75,0.4) 0%, transparent 100%) fixed, var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
     ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-track { background: var(--bg); }
     ::-webkit-scrollbar-thumb { background: var(--bg5); border-radius: 2px; }
@@ -250,7 +250,7 @@
     @keyframes heroFloat2 { 0%,100%{transform:rotate(10deg)} 50%{transform:translateY(-12px) rotate(7deg)} }
     @keyframes heroFloat3 { 0%,100%{transform:rotate(-8deg)} 50%{transform:translateY(-14px) rotate(-5deg)} }
     @keyframes heroFloat4 { 0%,100%{transform:translateY(-50%) rotate(14deg)} 50%{transform:translateY(calc(-50% - 9px)) rotate(11deg)} }
-    .pool-hero { position:relative; width:100%; overflow:hidden; background:radial-gradient(ellipse at 50% 110%, rgba(0,60,75,0.45) 0%, transparent 65%), #090909; border-bottom:1px solid var(--border); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:64px 24px 56px; min-height:260px; }
+    .pool-hero { position:relative; width:100%; overflow:hidden; background:transparent; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:64px 24px 56px; min-height:260px; }
     .pool-hero-name { font-size:5.5rem; font-weight:700; letter-spacing:-3px; line-height:1; color:#fff; text-transform:uppercase; position:relative; z-index:2; text-align:center; }
     .pool-hero-meta { font-size:1rem; color:rgba(255,255,255,0.38); margin-top:12px; font-weight:400; position:relative; z-index:2; text-align:center; letter-spacing:0.2px; }
     .hero-logo { position:absolute; border-radius:18px; display:flex; align-items:center; justify-content:center; overflow:hidden; z-index:1; }
