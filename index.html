@@ -9,86 +9,86 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Faster+One&display=swap');
 
     :root {
-      --bg:       #0a0a0f;
-      --bg2:      #111118;
-      --bg3:      #18181f;
-      --bg4:      #1e1e28;
-      --bg5:      #252530;
+      --bg:       #0d0d0d;
+      --bg2:      #141414;
+      --bg3:      #1a1a1a;
+      --bg4:      #202020;
+      --bg5:      #2a2a2a;
       --purple:   #7c5cfc;
       --gold:     #f5a623;
       --gold2:    #e8940f;
-      --green:    #22c55e;
-      --red:      #f43f5e;
-      --text:     #f0f0f8;
-      --text2:    #a0a0b8;
-      --text3:    #5a5a72;
-      --border:   rgba(255,255,255,0.06);
-      --border2:  rgba(255,255,255,0.1);
-      --radius:   16px;
-      --radius-sm:10px;
-      --grad-hero:   linear-gradient(135deg, #ff7043 0%, #f5a623 35%, #e040fb 70%, #7c5cfc 100%);
+      --green:    #34d399;
+      --red:      #f87171;
+      --text:     #ffffff;
+      --text2:    #888888;
+      --text3:    #4a4a4a;
+      --border:   rgba(255,255,255,0.07);
+      --border2:  rgba(255,255,255,0.12);
+      --radius:   8px;
+      --radius-sm:6px;
+      --grad-hero:   linear-gradient(135deg, #7c5cfc, #5e35e0);
       --grad-purple: linear-gradient(135deg, #7c5cfc, #5e35e0);
-      --grad-gold:   linear-gradient(135deg, #f5a623, #ff7043);
+      --grad-gold:   linear-gradient(135deg, #f5a623, #f59e0b);
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: var(--bg2); }
-    ::-webkit-scrollbar-thumb { background: var(--bg5); border-radius: 3px; }
+    body { font-family: 'IBM Plex Sans', 'Inter', system-ui, sans-serif; background: radial-gradient(ellipse 120% 500px at 50% 280px, rgba(0,60,75,0.4) 0%, transparent 100%) fixed, var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--bg5); border-radius: 2px; }
 
     /* ── NAV ── */
-    .nav { background: rgba(10,10,15,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 0 28px; display: flex; align-items: center; justify-content: space-between; height: 64px; position: sticky; top: 0; z-index: 100; }
-    .nav-logo { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.3px; background: var(--grad-hero); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; display: flex; align-items: center; gap: 8px; }
-    .nav-logo-icon { font-size: 1.4rem; -webkit-text-fill-color: initial; }
-    .nav-links { display: flex; gap: 2px; }
-    .nav-btn { background: none; border: none; color: var(--text2); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.87rem; font-weight: 500; transition: all .2s; font-family: inherit; }
-    .nav-btn:hover { background: var(--bg3); color: var(--text); }
-    .nav-btn.active { background: var(--bg4); color: var(--text); font-weight: 600; }
-    .nav-right { display: flex; align-items: center; gap: 12px; }
-    .nav-pill { background: var(--bg3); border: 1px solid var(--border2); border-radius: 20px; padding: 6px 14px; font-size: 0.82rem; color: var(--text2); font-weight: 500; }
-    .btn-logout { background: none; border: 1px solid var(--border2); color: var(--text3); padding: 7px 16px; border-radius: 8px; cursor: pointer; font-size: 0.82rem; font-weight: 500; font-family: inherit; transition: all .2s; }
-    .btn-logout:hover { border-color: var(--red); color: var(--red); }
+    /* Profile submenu */
+    .profile-submenu { position: fixed; bottom: 106px; left: 50%; transform: translateX(-50%); background: var(--bg2); backdrop-filter: blur(20px); border: 1px solid var(--border2); border-radius: 8px; padding: 4px; min-width: 200px; z-index: 300; box-shadow: 0 16px 48px rgba(0,0,0,0.6); }
+    .profile-submenu-btn { display: flex; align-items: center; gap: 10px; width: 100%; background: none; border: none; color: var(--text2); padding: 9px 12px; border-radius: 5px; cursor: pointer; font-size: 0.83rem; font-weight: 500; font-family: inherit; transition: all .12s; text-align: left; }
+    .profile-submenu-btn:hover { background: var(--bg3); color: var(--text); }
+    .profile-submenu-btn.danger:hover { background: rgba(248,113,113,0.08); color: var(--red); }
+    .submenu-overlay { position: fixed; inset: 0; z-index: 200; }
+    /* Tab bar */
+    .bottom-tab-bar { display: flex; position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.07); backdrop-filter: blur(40px) saturate(180%); -webkit-backdrop-filter: blur(40px) saturate(180%); border: 1px solid rgba(255,255,255,0.13); border-radius: 30px; padding: 5px; gap: 2px; z-index: 90; box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.06) inset, 0 -1px 0 rgba(0,0,0,0.3) inset; }
+    .tab-item { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 13px; border-radius: 25px; cursor: pointer; transition: all 0.2s ease; border: none; background: none; color: rgba(255,255,255,0.4); font-size: 0.6rem; font-weight: 600; font-family: inherit; white-space: nowrap; letter-spacing: 0.3px; text-transform: uppercase; min-width: 54px; }
+    .tab-item.active { background: rgba(255,255,255,0.13); color: #fff; box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset, 0 2px 12px rgba(0,0,0,0.25); }
+    .tab-icon { font-size: 1.25rem; line-height: 1; position: relative; }
+    .tab-dot { position: absolute; top: -2px; right: -4px; width: 6px; height: 6px; border-radius: 50%; background: var(--gold); border: 1.5px solid #0d0d0d; }
 
     /* ── PAGE ── */
-    .page { max-width: 1080px; margin: 0 auto; padding: 36px 24px 80px; }
-    .page-title { font-size: 1.5rem; font-weight: 800; margin-bottom: 28px; letter-spacing: -0.5px; }
+    .page { max-width: 1040px; margin: 0 auto; padding: 40px 28px 110px; }
+    .page-title { font-size: 1.35rem; font-weight: 600; margin-bottom: 28px; letter-spacing: -0.2px; color: var(--text); }
 
     /* ── HERO ── */
-    .hero-card { background: var(--grad-hero); border-radius: 22px; padding: 28px; position: relative; overflow: hidden; margin-bottom: 20px; }
-    .hero-card::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.15) 0%, transparent 60%); pointer-events: none; }
-    .hero-card::after { content: ''; position: absolute; bottom: -30px; right: -30px; width: 160px; height: 160px; border-radius: 50%; background: rgba(255,255,255,0.08); pointer-events: none; }
-    .hero-label { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.7); margin-bottom: 6px; }
-    .hero-score { font-size: 3rem; font-weight: 800; color: #fff; letter-spacing: -2px; line-height: 1; }
-    .hero-sub { font-size: 0.88rem; color: rgba(255,255,255,0.75); margin-top: 8px; font-weight: 500; }
+    .hero-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px; position: relative; overflow: hidden; margin-bottom: 16px; }
+    .hero-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; opacity: 0.8; }
+    .hero-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text3); margin-bottom: 10px; }
+    .hero-score { font-size: 3.5rem; font-weight: 700; color: var(--text); letter-spacing: -2px; line-height: 1; }
+    .hero-sub { font-size: 0.83rem; color: var(--text2); margin-top: 10px; font-weight: 400; }
 
     /* ── CARDS ── */
-    .card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; margin-bottom: 16px; }
+    .card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 12px; }
     .card:hover { border-color: var(--border2); }
-    .card-title { font-size: 0.72rem; font-weight: 700; margin-bottom: 16px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; }
+    .card-title { font-size: 0.68rem; font-weight: 600; margin-bottom: 18px; color: var(--text3); text-transform: uppercase; letter-spacing: 1.2px; }
 
     /* ── BUTTONS ── */
-    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; border-radius: 10px; font-size: 0.88rem; font-weight: 600; cursor: pointer; border: none; transition: all .2s; font-family: inherit; }
-    .btn-primary { background: var(--grad-purple); color: #fff; }
-    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
-    .btn-gold { background: var(--grad-gold); color: #fff; }
-    .btn-gold:hover { opacity: 0.9; transform: translateY(-1px); }
-    .btn-danger { background: var(--red); color: #fff; }
-    .btn-danger:hover { opacity: 0.85; }
-    .btn-ghost { background: var(--bg3); color: var(--text2); border: 1px solid var(--border2); }
-    .btn-ghost:hover { background: var(--bg4); color: var(--text); }
-    .btn-sm { padding: 6px 14px; font-size: 0.8rem; border-radius: 8px; }
-    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
-    .btn-full { width: 100%; justify-content: center; padding: 14px 20px; font-size: 0.95rem; border-radius: 12px; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: var(--radius); font-size: 0.85rem; font-weight: 500; cursor: pointer; border: none; transition: all .15s; font-family: inherit; }
+    .btn-primary { background: var(--gold); color: #fff; }
+    .btn-primary:hover { background: #6a4de8; }
+    .btn-gold { background: var(--gold); color: #fff; }
+    .btn-gold:hover { background: var(--gold2); }
+    .btn-danger { background: rgba(248,113,113,0.15); color: var(--red); border: 1px solid rgba(248,113,113,0.25); }
+    .btn-danger:hover { background: rgba(248,113,113,0.25); }
+    .btn-ghost { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: var(--bg4); color: var(--text); border-color: var(--border2); }
+    .btn-sm { padding: 5px 12px; font-size: 0.78rem; border-radius: var(--radius-sm); }
+    .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .btn-full { width: 100%; justify-content: center; padding: 12px 20px; font-size: 0.9rem; }
 
     /* ── FORMS ── */
-    .form-group { margin-bottom: 18px; }
-    .form-label { display: block; font-size: 0.78rem; color: var(--text3); margin-bottom: 7px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-    .form-input { width: 100%; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); padding: 11px 14px; border-radius: 10px; font-size: 0.9rem; outline: none; transition: all .2s; font-family: inherit; }
-    .form-input:focus { border-color: var(--purple); background: var(--bg4); box-shadow: 0 0 0 3px rgba(124,92,252,0.12); }
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 0.72rem; color: var(--text3); margin-bottom: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; }
+    .form-input { width: 100%; background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: var(--radius-sm); font-size: 0.88rem; outline: none; transition: all .15s; font-family: inherit; }
+    .form-input:focus { border-color: var(--gold); background: var(--bg4); box-shadow: 0 0 0 3px rgba(124,92,252,0.1); }
     .form-input::placeholder { color: var(--text3); }
     select.form-input { cursor: pointer; }
 
@@ -98,150 +98,175 @@
     @keyframes blobFloat3 { 0%,100%{transform:translate(-50%,0) scale(1)} 50%{transform:translate(-50%,40px) scale(0.88)} }
     @keyframes grainDrift { 0%{transform:translate(0,0)} 20%{transform:translate(-4px,2px)} 40%{transform:translate(3px,-3px)} 60%{transform:translate(-2px,4px)} 80%{transform:translate(4px,1px)} 100%{transform:translate(0,0)} }
 
-    .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; background: #04040a; }
+    .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; background: #080808; }
     .login-blob { position: absolute; border-radius: 50%; pointer-events: none; }
-    .login-blob-1 { width: 700px; height: 620px; background: radial-gradient(ellipse, rgba(124,92,252,0.38) 0%, transparent 70%); top: -180px; left: -160px; filter: blur(60px); animation: blobFloat1 20s ease-in-out infinite; }
-    .login-blob-2 { width: 580px; height: 580px; background: radial-gradient(ellipse, rgba(245,100,35,0.28) 0%, transparent 70%); bottom: -180px; right: -140px; filter: blur(70px); animation: blobFloat2 16s ease-in-out infinite; }
-    .login-blob-3 { width: 460px; height: 460px; background: radial-gradient(ellipse, rgba(240,180,41,0.18) 0%, transparent 70%); top: 42%; left: 50%; transform: translateX(-50%); filter: blur(80px); animation: blobFloat3 24s ease-in-out infinite; }
-    .login-grain { position: absolute; inset: -20%; width: 140%; height: 140%; pointer-events: none; z-index: 1; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E"); background-size: 160px 160px; background-repeat: repeat; image-rendering: pixelated; opacity: 0.055; mix-blend-mode: screen; animation: grainDrift 0.18s steps(1) infinite; }
-    .login-box { background: rgba(8,8,16,0.72); backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px); border: 1px solid rgba(255,255,255,0.09); border-radius: 28px; padding: 48px 44px; width: 420px; max-width: 95vw; position: relative; z-index: 2; box-shadow: 0 48px 100px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.04) inset; }
-    .login-logo { text-align: center; margin-bottom: 36px; }
-    .login-logo h1 { font-size: 2.6rem; font-weight: 800; letter-spacing: -1.5px; line-height: 1.05; background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.75) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 12px; }
-    .login-tagline { font-size: 0.95rem; font-weight: 500; color: rgba(255,255,255,0.55); line-height: 1.55; max-width: 300px; margin: 0 auto 6px; }
-    .login-tagline strong { color: rgba(255,255,255,0.82); font-weight: 700; }
-    .login-sub { font-size: 0.78rem; color: rgba(255,255,255,0.3); margin-top: 10px; }
-    .login-hint { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 12px 16px; font-size: 0.82rem; color: var(--text2); text-align: center; margin-top: 20px; }
+    .login-blob-1 { width: 700px; height: 620px; background: radial-gradient(ellipse, rgba(124,92,252,0.22) 0%, transparent 70%); top: -180px; left: -160px; filter: blur(80px); animation: blobFloat1 20s ease-in-out infinite; }
+    .login-blob-2 { width: 580px; height: 580px; background: radial-gradient(ellipse, rgba(94,53,224,0.16) 0%, transparent 70%); bottom: -180px; right: -140px; filter: blur(90px); animation: blobFloat2 16s ease-in-out infinite; }
+    .login-blob-3 { width: 460px; height: 460px; background: radial-gradient(ellipse, rgba(124,92,252,0.1) 0%, transparent 70%); top: 42%; left: 50%; transform: translateX(-50%); filter: blur(100px); animation: blobFloat3 24s ease-in-out infinite; }
+    .login-grain { position: absolute; inset: -20%; width: 140%; height: 140%; pointer-events: none; z-index: 1; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E"); background-size: 160px 160px; background-repeat: repeat; image-rendering: pixelated; opacity: 0.04; mix-blend-mode: screen; animation: grainDrift 0.18s steps(1) infinite; }
+    .login-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 44px 40px; width: 400px; max-width: 95vw; position: relative; z-index: 2; box-shadow: 0 32px 80px rgba(0,0,0,0.5); }
+    .login-logo { text-align: center; margin-bottom: 32px; }
+    .login-logo h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: -1px; line-height: 1.1; color: var(--text); margin-bottom: 10px; }
+    .login-tagline { font-size: 0.88rem; font-weight: 400; color: var(--text2); line-height: 1.6; max-width: 280px; margin: 0 auto 6px; }
+    .login-tagline strong { color: var(--text); font-weight: 600; }
+    .login-sub { font-size: 0.75rem; color: var(--text3); margin-top: 10px; }
+    .login-hint { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 0.8rem; color: var(--text2); text-align: center; margin-top: 18px; }
 
     /* ── TABLE ── */
     .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-    thead th { padding: 10px 16px; text-align: left; color: var(--text3); font-weight: 600; font-size: 0.73rem; text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 1px solid var(--border); }
-    tbody td { padding: 13px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    thead th { padding: 10px 16px; text-align: left; color: var(--text3); font-weight: 600; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border); }
+    tbody td { padding: 14px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
     tbody tr:last-child td { border-bottom: none; }
-    tbody tr { transition: background .15s; }
+    tbody tr { transition: background .1s; }
     tbody tr:hover td { background: rgba(255,255,255,0.02); }
 
     /* ── BADGES ── */
-    .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 0.73rem; font-weight: 700; }
-    .badge-admin   { background: rgba(124,92,252,0.15); color: #a78bfa; }
-    .badge-user    { background: rgba(59,130,246,0.12);  color: #93c5fd; }
-    .badge-open    { background: rgba(34,197,94,0.12);   color: #86efac; }
-    .badge-locked  { background: rgba(244,63,94,0.12);   color: #fda4af; }
-    .badge-setup   { background: rgba(160,160,184,0.12); color: var(--text3); }
-    .badge-complete{ background: rgba(245,166,35,0.15);  color: var(--gold); }
+    .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.3px; }
+    .badge-admin   { background: rgba(124,92,252,0.12); color: #9d79fc; }
+    .badge-user    { background: rgba(255,255,255,0.06); color: var(--text2); }
+    .badge-open    { background: rgba(52,211,153,0.1);   color: var(--green); }
+    .badge-locked  { background: rgba(248,113,113,0.1);  color: var(--red); }
+    .badge-setup   { background: rgba(255,255,255,0.06); color: var(--text3); }
+    .badge-complete{ background: rgba(245,166,35,0.12);  color: var(--gold); }
 
     /* ── MATCHUP ── */
-    .matchup { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; transition: border-color .2s; }
+    .matchup { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; transition: border-color .15s; }
     .matchup:hover { border-color: var(--border2); }
-    .matchup-header { background: rgba(255,255,255,0.03); padding: 9px 16px; font-size: 0.72rem; color: var(--text3); font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
-    .matchup-team { padding: 13px 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background .15s; border-bottom: 1px solid var(--border); }
+    .matchup-header { background: var(--bg3); padding: 8px 14px; font-size: 0.68rem; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+    .matchup-team { padding: 13px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background .1s; border-bottom: 1px solid var(--border); }
     .matchup-team:last-of-type { border-bottom: none; }
-    .matchup-team:hover { background: rgba(255,255,255,0.03); }
-    .matchup-team.selected { background: rgba(124,92,252,0.1); border-left: 3px solid var(--purple); }
-    .matchup-team.winner-real { background: rgba(34,197,94,0.07); }
-    .matchup-team.loser-real { opacity: 0.35; }
-    .team-name { font-weight: 600; font-size: 0.9rem; }
-    .pick-dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border2); display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700; flex-shrink: 0; transition: all .2s; }
+    .matchup-team:hover { background: rgba(255,255,255,0.02); }
+    .matchup-team.selected { background: rgba(124,92,252,0.08); border-left: 2px solid var(--purple); }
+    .matchup-team.winner-real { background: rgba(52,211,153,0.05); }
+    .matchup-team.loser-real { opacity: 0.3; }
+    .team-name { font-weight: 500; font-size: 0.88rem; }
+    .pick-dot { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--border2); display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 700; flex-shrink: 0; transition: all .15s; }
     .pick-dot.picked   { background: var(--purple); border-color: var(--purple); color: #fff; }
     .pick-dot.correct  { background: var(--green);  border-color: var(--green);  color: #fff; }
     .pick-dot.wrong    { background: var(--red);    border-color: var(--red);    color: #fff; }
-    .length-picker { display: flex; gap: 6px; padding: 10px 16px; background: rgba(0,0,0,0.2); align-items: center; flex-wrap: wrap; }
-    .length-label { font-size: 0.75rem; color: var(--text3); margin-right: 4px; font-weight: 600; }
-    .length-btn { background: var(--bg4); border: 1px solid var(--border2); color: var(--text2); padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 700; transition: all .15s; font-family: inherit; }
+    .length-picker { display: flex; gap: 5px; padding: 9px 14px; background: rgba(0,0,0,0.25); align-items: center; flex-wrap: wrap; }
+    .length-label { font-size: 0.72rem; color: var(--text3); margin-right: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .length-btn { background: var(--bg4); border: 1px solid var(--border); color: var(--text2); padding: 3px 10px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; font-weight: 600; transition: all .12s; font-family: inherit; }
     .length-btn:hover { border-color: var(--purple); color: var(--text); }
-    .length-btn.active { background: var(--grad-purple); border-color: var(--purple); color: #fff; }
+    .length-btn.active { background: var(--purple); border-color: var(--purple); color: #fff; }
 
     /* ── ALERT ── */
-    .alert { padding: 13px 18px; border-radius: 10px; font-size: 0.86rem; margin-bottom: 18px; font-weight: 500; display: flex; align-items: flex-start; gap: 10px; }
-    .alert-info    { background: rgba(59,130,246,0.1);  border: 1px solid rgba(59,130,246,0.2);  color: #93c5fd; }
-    .alert-success { background: rgba(34,197,94,0.1);   border: 1px solid rgba(34,197,94,0.2);   color: #86efac; }
-    .alert-warn    { background: rgba(245,166,35,0.1);  border: 1px solid rgba(245,166,35,0.2);  color: var(--gold); }
-    .alert-danger  { background: rgba(244,63,94,0.1);   border: 1px solid rgba(244,63,94,0.2);   color: #fda4af; }
+    .alert { padding: 12px 16px; border-radius: var(--radius); font-size: 0.83rem; margin-bottom: 16px; font-weight: 400; display: flex; align-items: flex-start; gap: 10px; }
+    .alert-info    { background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text2); }
+    .alert-success { background: rgba(52,211,153,0.08);  border: 1px solid rgba(52,211,153,0.2);  color: var(--green); }
+    .alert-warn    { background: rgba(245,166,35,0.08);  border: 1px solid rgba(245,166,35,0.2);  color: var(--gold); }
+    .alert-danger  { background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.2); color: var(--red); }
 
     /* ── LAYOUT ── */
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .flex { display: flex; } .flex-wrap { flex-wrap: wrap; } .flex-col { flex-direction: column; }
     .gap-1{gap:6px} .gap-2{gap:10px} .gap-3{gap:14px}
     .items-center{align-items:center} .justify-between{justify-content:space-between}
     .mt-2{margin-top:8px} .mt-3{margin-top:14px} .mb-2{margin-bottom:8px} .mb-3{margin-bottom:14px}
-    .text-sm{font-size:0.83rem} .text-xs{font-size:0.75rem}
+    .text-sm{font-size:0.82rem} .text-xs{font-size:0.72rem}
     .text-dim{color:var(--text2)} .text-dim2{color:var(--text3)}
     .text-gold{color:var(--gold)} .text-green{color:var(--green)} .text-red{color:var(--red)}
-    .font-bold{font-weight:700} .font-black{font-weight:800}
+    .font-bold{font-weight:600} .font-black{font-weight:700}
     .text-right{text-align:right} .text-center{text-align:center}
 
     /* ── MODAL ── */
-    .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; }
-    .modal { background: var(--bg2); border: 1px solid var(--border2); border-radius: 20px; padding: 32px; width: 440px; max-width: 100%; box-shadow: 0 40px 80px rgba(0,0,0,0.6); }
-    .modal-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 22px; letter-spacing: -0.3px; }
-    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+    .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(6px); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .modal { background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--radius); padding: 28px; width: 420px; max-width: 100%; box-shadow: 0 32px 80px rgba(0,0,0,0.7); }
+    .modal-title { font-size: 1rem; font-weight: 600; margin-bottom: 20px; }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
 
     /* ── STAT PILLS ── */
-    .stat-pill { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; flex: 1; min-width: 100px; }
-    .stat-value { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.5px; }
-    .stat-label { font-size: 0.73rem; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+    .stat-pill { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; flex: 1; min-width: 90px; }
+    .stat-value { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.5px; }
+    .stat-label { font-size: 0.68rem; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
 
     /* ── TABS ── */
-    .tabs { display: flex; gap: 4px; margin-bottom: 22px; background: var(--bg3); border-radius: 12px; padding: 5px; }
-    .tab { flex: 1; background: none; border: none; padding: 9px 16px; color: var(--text3); cursor: pointer; font-size: 0.85rem; font-weight: 600; border-radius: 9px; transition: all .2s; font-family: inherit; text-align: center; }
+    .tabs { display: flex; gap: 2px; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
+    .tab { background: none; border: none; border-bottom: 2px solid transparent; padding: 10px 16px; color: var(--text3); cursor: pointer; font-size: 0.83rem; font-weight: 500; transition: all .15s; font-family: inherit; margin-bottom: -1px; }
     .tab:hover { color: var(--text2); }
-    .tab.active { background: var(--bg5); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+    .tab.active { color: var(--text); border-bottom-color: var(--gold); }
 
     /* ── MISC ── */
-    .conf-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); margin-bottom: 10px; padding-left: 4px; }
-    .scoring-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
+    .conf-label { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text3); margin-bottom: 10px; padding-left: 2px; }
+    .scoring-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
     .scoring-row:last-child { border-bottom: none; }
-    .pts-chip { background: rgba(245,166,35,0.12); color: var(--gold); font-weight: 800; font-size: 0.82rem; padding: 3px 10px; border-radius: 20px; }
-    .status-bar { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 16px 22px; margin-bottom: 22px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; }
-    .lb-rank-1{color:#ffd700} .lb-rank-2{color:#c0c0c0} .lb-rank-3{color:#cd7f32}
-    .my-row td { background: rgba(124,92,252,0.05) !important; }
-    .empty-state { text-align: center; padding: 56px 24px; color: var(--text3); }
-    .empty-state h3 { font-size: 1.05rem; margin-bottom: 8px; color: var(--text2); font-weight: 700; }
-    .corner-btn { position: fixed; bottom: 20px; right: 20px; z-index: 50; background: var(--bg3); border: 1px solid var(--border2); color: var(--text2); padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; font-weight: 600; font-family: inherit; transition: all .2s; backdrop-filter: blur(10px); }
-    .corner-btn:hover { background: var(--bg4); color: var(--text); }
+    .pts-chip { background: rgba(245,166,35,0.1); color: var(--gold); font-weight: 700; font-size: 0.78rem; padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(245,166,35,0.2); }
+    .status-bar { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+    .lb-rank-1{color:#ffd700} .lb-rank-2{color:#a0a0a0} .lb-rank-3{color:#cd7f32}
+    .my-row td { background: rgba(124,92,252,0.04) !important; }
+    .empty-state { text-align: center; padding: 64px 24px; color: var(--text3); }
+    .empty-state h3 { font-size: 1rem; margin-bottom: 8px; color: var(--text2); font-weight: 500; }
+    .corner-btn { position: fixed; bottom: 20px; right: 20px; z-index: 50; background: var(--bg2); border: 1px solid var(--border2); color: var(--text2); padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 0.78rem; font-weight: 500; font-family: inherit; transition: all .15s; }
+    .corner-btn:hover { background: var(--bg3); color: var(--text); }
 
     /* ── SPINNER ── */
     @keyframes spin { to { transform: rotate(360deg); } }
-    .spinner { width: 36px; height: 36px; border: 3px solid var(--border2); border-top-color: var(--purple); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto; }
-    .loading-screen { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: var(--bg); color: var(--text2); font-size: 0.9rem; }
+    .spinner { width: 28px; height: 28px; border: 2px solid var(--border); border-top-color: var(--purple); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto; }
+    .loading-screen { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: var(--bg); color: var(--text2); font-size: 0.85rem; }
 
     /* ── PROFILE SELECT ── */
-    .profile-wrap { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; position: relative; overflow: hidden; background: #04040a; }
+    .profile-wrap { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 20px; position: relative; overflow: hidden; background: var(--bg); }
     .profile-header { text-align: center; margin-bottom: 48px; position: relative; z-index: 2; }
-    .profile-header h1 { font-size: 2rem; font-weight: 800; letter-spacing: -1px; background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.75) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 8px; }
-    .profile-header p { color: var(--text2); font-size: 1rem; font-weight: 500; }
-    .profile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 16px; max-width: 700px; width: 100%; position: relative; z-index: 2; }
-    .profile-card { background: rgba(8,8,16,0.72); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.09); border-radius: 20px; padding: 28px 16px 22px; display: flex; flex-direction: column; align-items: center; gap: 12px; cursor: pointer; transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease; text-align: center; }
-    .profile-card:hover { transform: translateY(-6px); border-color: var(--purple); box-shadow: 0 16px 40px rgba(124,92,252,0.25); }
-    .profile-avatar { width: 68px; height: 68px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: #fff; flex-shrink: 0; }
-    .profile-name { font-weight: 700; color: var(--text); font-size: 0.9rem; word-break: break-word; line-height: 1.3; }
-    .profile-admin-badge { font-size: 0.68rem; padding: 2px 9px; border-radius: 20px; background: rgba(124,92,252,0.2); color: #a78bfa; font-weight: 700; border: 1px solid rgba(124,92,252,0.3); }
-    .profile-exit { position: relative; z-index: 2; margin-top: 44px; background: none; border: none; color: var(--text3); font-size: 0.83rem; cursor: pointer; font-family: inherit; font-weight: 500; transition: color .2s; padding: 0; }
-    .profile-exit:hover { color: var(--red); }
-    .profile-add-card { background: rgba(8,8,16,0.4); backdrop-filter: blur(20px); border: 2px dashed rgba(255,255,255,0.12); border-radius: 20px; padding: 28px 16px 22px; display: flex; flex-direction: column; align-items: center; gap: 12px; cursor: pointer; transition: all 0.18s ease; text-align: center; }
-    .profile-add-card:hover { border-color: var(--purple); background: rgba(124,92,252,0.08); transform: translateY(-6px); }
-    .profile-add-icon { width: 68px; height: 68px; border-radius: 50%; background: rgba(255,255,255,0.05); border: 2px dashed rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; font-size: 2rem; line-height: 1; color: rgba(255,255,255,0.35); flex-shrink: 0; }
-    .profile-add-label { font-weight: 600; color: var(--text3); font-size: 0.88rem; }
+    .profile-header h1 { font-size: 1.8rem; font-weight: 700; letter-spacing: -0.5px; color: var(--text); margin-bottom: 8px; }
+    .profile-header p { color: var(--text2); font-size: 0.9rem; font-weight: 400; }
+    .profile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; max-width: 680px; width: 100%; position: relative; z-index: 2; }
+    .profile-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px 16px 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease; text-align: center; }
+    .profile-card:hover { border-color: var(--border2); background: var(--bg3); }
+    .profile-avatar { width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .profile-name { font-weight: 500; color: var(--text); font-size: 0.88rem; word-break: break-word; line-height: 1.3; }
+    .profile-admin-badge { font-size: 0.65rem; padding: 2px 7px; border-radius: 4px; background: rgba(124,92,252,0.12); color: #9d79fc; font-weight: 600; }
+    .profile-exit { position: relative; z-index: 2; margin-top: 40px; background: none; border: none; color: var(--text3); font-size: 0.8rem; cursor: pointer; font-family: inherit; font-weight: 400; transition: color .15s; padding: 0; }
+    .profile-exit:hover { color: var(--text2); }
+    .profile-add-card { background: var(--bg2); border: 1px dashed var(--border2); border-radius: var(--radius); padding: 28px 16px 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; cursor: pointer; transition: all 0.15s ease; text-align: center; }
+    .profile-add-card:hover { border-color: var(--purple); background: rgba(124,92,252,0.05); }
+    .profile-add-icon { width: 64px; height: 64px; border-radius: 50%; background: var(--bg3); border: 1px dashed var(--border2); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; line-height: 1; color: var(--text3); flex-shrink: 0; }
+    .profile-add-label { font-weight: 500; color: var(--text3); font-size: 0.85rem; }
     /* ── AVATAR PICKER ── */
-    .avatar-picker-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 10px 0 6px; }
-    .avatar-picker-opt { border: 2px solid transparent; border-radius: 50%; cursor: pointer; padding: 3px; background: none; transition: all .15s; display: flex; align-items: center; justify-content: center; }
-    .avatar-picker-opt:hover { border-color: var(--border2); transform: scale(1.1); }
-    .avatar-picker-opt.chosen { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(124,92,252,0.35); }
-    .avatar-swatch { width: 52px; height: 52px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    .avatar-picker-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 10px 0 6px; }
+    .avatar-picker-opt { border: 1.5px solid transparent; border-radius: 50%; cursor: pointer; padding: 3px; background: none; transition: all .12s; display: flex; align-items: center; justify-content: center; }
+    .avatar-picker-opt:hover { border-color: var(--border2); transform: scale(1.08); }
+    .avatar-picker-opt.chosen { border-color: var(--purple); box-shadow: 0 0 0 2px rgba(124,92,252,0.25); }
+    .avatar-swatch { width: 48px; height: 48px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; }
 
     /* ── POOL SELECT ── */
-    .pool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 660px; width: 100%; position: relative; z-index: 2; }
-    .pool-card { background: rgba(8,8,16,0.72); backdrop-filter: blur(28px); border: 1px solid rgba(255,255,255,0.09); border-radius: 24px; padding: 32px 28px; display: flex; flex-direction: column; gap: 20px; transition: border-color .2s, box-shadow .2s; }
-    .pool-card:focus-within { border-color: var(--pool-accent,var(--purple)); box-shadow: 0 0 0 3px rgba(var(--pool-accent-rgb,124 92 252)/.12); }
+    .pool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 620px; width: 100%; position: relative; z-index: 2; }
+    .pool-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px 24px; display: flex; flex-direction: column; gap: 18px; transition: border-color .15s; }
+    .pool-card:focus-within { border-color: rgba(124,92,252,0.5); }
     .pool-card-header { text-align: center; }
-    .pool-card-icon { font-size: 2.8rem; margin-bottom: 10px; }
-    .pool-card-name { font-size: 1.15rem; font-weight: 800; color: var(--text); letter-spacing: -0.3px; }
+    .pool-card-icon { font-size: 2.4rem; margin-bottom: 10px; }
+    .pool-card-name { font-size: 1.05rem; font-weight: 600; color: var(--text); }
+
+    /* ── POOL HERO ── */
+    @keyframes heroFloat1 { 0%,100%{transform:translateY(-50%) rotate(-12deg)} 50%{transform:translateY(calc(-50% - 10px)) rotate(-9deg)} }
+    @keyframes heroFloat2 { 0%,100%{transform:rotate(10deg)} 50%{transform:translateY(-12px) rotate(7deg)} }
+    @keyframes heroFloat3 { 0%,100%{transform:rotate(-8deg)} 50%{transform:translateY(-14px) rotate(-5deg)} }
+    @keyframes heroFloat4 { 0%,100%{transform:translateY(-50%) rotate(14deg)} 50%{transform:translateY(calc(-50% - 9px)) rotate(11deg)} }
+    .pool-hero { position:relative; width:100%; overflow:hidden; background:transparent; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:64px 24px 56px; min-height:260px; }
+    .pool-hero-name { font-size:5.5rem; font-weight:400; letter-spacing:1px; line-height:1; color:#b5ccdb; text-transform:uppercase; font-family:'Faster One',cursive; position:relative; z-index:2; text-align:center; }
+    .pool-hero-meta { font-size:1rem; color:rgba(255,255,255,0.38); margin-top:12px; font-weight:400; position:relative; z-index:2; text-align:center; letter-spacing:0.2px; }
+    .hero-logo { position:absolute; border-radius:18px; display:flex; align-items:center; justify-content:center; overflow:hidden; z-index:1; }
+    .hero-logo svg { width:56px; height:56px; }
+    .hero-logo-1 { width:76px; height:76px; left:8%; top:50%; animation:heroFloat1 4.2s ease-in-out infinite; }
+    .hero-logo-2 { width:80px; height:80px; left:31%; top:14%; animation:heroFloat2 5.1s ease-in-out infinite; }
+    .hero-logo-3 { width:74px; height:74px; right:30%; top:9%; animation:heroFloat3 4.7s ease-in-out infinite; }
+    .hero-logo-4 { width:78px; height:78px; right:7%; top:48%; animation:heroFloat4 5.5s ease-in-out infinite; }
+
+    @media(max-width:700px) {
+      .pool-hero-name { font-size:3.2rem; letter-spacing:1px; }
+      .pool-hero { min-height:200px; padding:48px 16px 40px; }
+      .hero-logo { border-radius:14px; }
+      .hero-logo svg { width:40px; height:40px; }
+      .hero-logo-1 { width:58px; height:58px; left:2%; }
+      .hero-logo-2 { width:60px; height:60px; left:25%; }
+      .hero-logo-3 { width:56px; height:56px; right:24%; }
+      .hero-logo-4 { width:60px; height:60px; right:1%; }
+    }
 
     @media(max-width:700px) {
       .pool-grid { grid-template-columns: 1fr; }
       .grid-2 { grid-template-columns: 1fr; }
-      .nav-links { display: none; }
-      .page { padding: 20px 14px 80px; }
+      .page { padding: 20px 14px 110px; }
       .login-box { padding: 32px 24px; }
       .hero-score { font-size: 2.2rem; }
     }
@@ -295,28 +320,30 @@ async function dbLoadAll(poolId) {
   if (adminRes.data && !users.find(u => u.id === 'admin')) {
     users = [adminRes.data, ...users];
   }
-  const config = configRes.data || { pool_id:poolId, season:'2026', status:'setup', round1: DEFAULT_ROUND1, results: DEFAULT_RESULTS };
+  let config = configRes.data;
+  if (!config) {
+    // First time this pool has been loaded — create a config row so saves are always UPDATEs
+    const defaults = { pool_id:poolId, season:'2025', status:'setup', round1:DEFAULT_ROUND1, results:DEFAULT_RESULTS, updated_at:new Date().toISOString() };
+    const { data: created } = await sb.from('pool_config').insert([defaults]).select().single();
+    config = created || defaults;
+  }
   return {
     poolId,
     users,
     bracket: {
-      season:  config.season  || '2026',
+      season:  config.season  || '2025',
       status:  config.status  || 'setup',
-      round1:  config.round1  || DEFAULT_ROUND1,
-      results: config.results || DEFAULT_RESULTS,
+      round1:  (config.round1?.length === 8) ? config.round1 : DEFAULT_ROUND1,
+      results: config.results?.r1 ? config.results : DEFAULT_RESULTS,
     }
   };
 }
 
 async function dbSaveConfig(bracket, poolId) {
-  await sb.from('pool_config').upsert({
-    pool_id:  poolId,
-    season:   bracket.season,
-    status:   bracket.status,
-    round1:   bracket.round1,
-    results:  bracket.results,
-    updated_at: new Date().toISOString()
-  }, { onConflict: 'pool_id' });
+  const payload = { pool_id:poolId, season:bracket.season, status:bracket.status, round1:bracket.round1, results:bracket.results, updated_at:new Date().toISOString() };
+  // Row is guaranteed to exist (created in dbLoadAll on first visit), so UPDATE is safe
+  const { error } = await sb.from('pool_config').update(payload).eq('pool_id', poolId);
+  if (error) throw error;
 }
 
 async function dbSavePicks(userId, picks) {
@@ -361,7 +388,6 @@ async function nhlFetchPlayoff(season) {
 
 function nhlTeamName(team) {
   if (!team) return '';
-  // Use city + common name for clarity: "Toronto Maple Leafs"
   return team.name?.default || team.commonName?.default || team.abbrev || '';
 }
 
@@ -753,28 +779,128 @@ function ProfileSelectPage({users, onSelect, onSignOut, onAdd}) {
 }
 
 // ── NAVBAR ──
+const TAB_ICONS={
+  pool:<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M7.5 21H2V9h5.5v12zm7.25-18h-5.5v18h5.5V3zm7.25 8h-5.5v10h5.5V11z"/></svg>,
+  picks:<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-8.29 11.29L7.7 11.3a.996.996 0 1 0-1.41 1.41l3 3c.39.39 1.02.39 1.41 0l7-7a.996.996 0 1 0-1.41-1.41l-6.29 6.29z"/></svg>,
+  'manage-users':<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>,
+  'bracket-setup':<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>,
+  results:<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>,
+};
 function NavBar({user,view,setView,onSwitchProfile,onSignOut,needsPicks}){
-  const memberNav=[
-    {key:'pool',label:'My Pool'},
-    {key:'picks',label:<>My Bracket{needsPicks&&<span style={{display:'inline-block',width:7,height:7,borderRadius:'50%',background:'var(--gold)',marginLeft:6,verticalAlign:'middle',flexShrink:0}}/>}</>},
+  const [menuOpen,setMenuOpen]=useState(false);
+  const allTabs=[
+    {key:'pool',label:'Leaderboard'},
+    {key:'picks',label:'My Picks',dot:needsPicks},
+    ...(user.is_admin?[
+      {key:'manage-users',label:'Members'},
+      {key:'bracket-setup',label:'Setup'},
+      {key:'results',label:'Results'},
+    ]:[]),
   ];
-  const adminNav=user.is_admin?[{key:'manage-users',label:'Members'},{key:'bracket-setup',label:'Bracket Setup'},{key:'results',label:'Results'}]:[];
   const hasAvatar=user.avatar!=null;
+  const avatarIcon=(
+    <div style={{width:22,height:22,borderRadius:'50%',background:hasAvatar?AVATAR_LIST[user.avatar]?.bg:'var(--purple)',overflow:'hidden',display:'flex',alignItems:'center',justifyContent:'center',fontSize:hasAvatar?0:'9px',fontWeight:800,color:'#fff'}}>
+      {hasAvatar?<AvatarSvg id={user.avatar}/>:user.username[0]?.toUpperCase()}
+    </div>
+  );
   return(
-    <nav className="nav">
-      <div className="nav-logo"><span className="nav-logo-icon">🏒</span>NHL Pool</div>
-      <div className="nav-links">{[...memberNav,...adminNav].map(n=><button key={n.key} className={`nav-btn${view===n.key?' active':''}`} onClick={()=>setView(n.key)}>{n.label}</button>)}</div>
-      <div className="nav-right">
-        <div className="nav-pill" style={{display:'flex',alignItems:'center',gap:8}}>
-          <div style={{width:22,height:22,borderRadius:'50%',background:hasAvatar?AVATAR_LIST[user.avatar]?.bg:'var(--purple)',overflow:'hidden',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:hasAvatar?0:'0.65rem',fontWeight:800,color:'#fff'}}>
-            {hasAvatar?<AvatarSvg id={user.avatar}/>:user.username[0]?.toUpperCase()}
+    <>
+      {menuOpen&&<div className="submenu-overlay" onClick={()=>setMenuOpen(false)}/>}
+      {menuOpen&&(
+        <div className="profile-submenu">
+          <div style={{padding:'8px 14px 10px',borderBottom:'1px solid var(--border)',marginBottom:4}}>
+            <div style={{display:'flex',alignItems:'center',gap:10}}>
+              <div style={{width:32,height:32,borderRadius:'50%',background:hasAvatar?AVATAR_LIST[user.avatar]?.bg:'var(--purple)',overflow:'hidden',display:'flex',alignItems:'center',justifyContent:'center',fontSize:hasAvatar?0:'13px',fontWeight:800,color:'#fff'}}>
+                {hasAvatar?<AvatarSvg id={user.avatar}/>:user.username[0]?.toUpperCase()}
+              </div>
+              <div>
+                <div style={{fontSize:'0.88rem',fontWeight:700,color:'var(--text)'}}>{user.username}</div>
+                <div style={{fontSize:'0.72rem',color:'var(--text3)'}}>{user.is_admin?'Admin':'Player'}</div>
+              </div>
+            </div>
           </div>
-          {user.username}{user.is_admin?' · Admin':''}
+          <button className="profile-submenu-btn" onClick={()=>{onSwitchProfile();setMenuOpen(false);}}>Switch Profile</button>
+          <button className="profile-submenu-btn danger" onClick={()=>{onSignOut();setMenuOpen(false);}}>Sign Out</button>
         </div>
-        <button className="btn-logout" onClick={onSwitchProfile}>Switch</button>
-        <button className="btn-logout" onClick={onSignOut} style={{borderColor:'rgba(244,63,94,0.3)',color:'var(--text3)'}}>Sign Out</button>
+      )}
+      <div className="bottom-tab-bar">
+        {allTabs.map(n=>(
+          <button key={n.key} className={`tab-item${view===n.key?' active':''}`} onClick={()=>setView(n.key)}>
+            <span className="tab-icon">{TAB_ICONS[n.key]}{n.dot&&<span className="tab-dot"/>}</span>
+            <span>{n.label}</span>
+          </button>
+        ))}
+        <button className={`tab-item${menuOpen?' active':''}`} onClick={()=>setMenuOpen(o=>!o)}>
+          <span className="tab-icon">{avatarIcon}</span>
+          <span>Profile</span>
+        </button>
       </div>
-    </nav>
+    </>
+  );
+}
+
+// ── ALL NHL TEAMS ──
+const ALL_TEAMS=[
+  {src:'Assets/League=NHL, Team=Anaheim Ducks.png',           bg:'#1a0a00', glow:'rgba(252,76,2,0.65)',    glowFar:'rgba(252,76,2,0.2)'},
+  {src:'Assets/League=NHL, Team=Arizona Coyotes.png',         bg:'#1a0008', glow:'rgba(134,38,51,0.65)',   glowFar:'rgba(134,38,51,0.2)'},
+  {src:'Assets/League=NHL, Team=Boston Bruins.png',           bg:'#1a1400', glow:'rgba(252,181,20,0.65)',  glowFar:'rgba(252,181,20,0.2)'},
+  {src:'Assets/League=NHL, Team=Buffalo Sabres.png',          bg:'#00051a', glow:'rgba(0,48,135,0.65)',    glowFar:'rgba(0,48,135,0.2)'},
+  {src:'Assets/League=NHL, Team=Calgary Flames.png',          bg:'#1a0002', glow:'rgba(210,0,28,0.65)',    glowFar:'rgba(210,0,28,0.2)'},
+  {src:'Assets/League=NHL, Team=Carolina Hurricanes.png',     bg:'#1a0005', glow:'rgba(200,16,46,0.65)',   glowFar:'rgba(200,16,46,0.2)'},
+  {src:'Assets/League=NHL, Team=Chicago Blackhawks.png',      bg:'#1a0005', glow:'rgba(200,16,46,0.65)',   glowFar:'rgba(200,16,46,0.2)'},
+  {src:'Assets/League=NHL, Team=Colorado Avalanche.png',      bg:'#180814', glow:'rgba(111,38,61,0.6)',    glowFar:'rgba(111,38,61,0.2)'},
+  {src:'Assets/League=NHL, Team=Columbus Blue Jackets.png',   bg:'#00051a', glow:'rgba(0,38,84,0.65)',     glowFar:'rgba(0,38,84,0.2)'},
+  {src:'Assets/League=NHL, Team=Dallas Stars.png',            bg:'#001a0e', glow:'rgba(0,104,71,0.65)',    glowFar:'rgba(0,104,71,0.2)'},
+  {src:'Assets/League=NHL, Team=Detroit Red Wings.png',       bg:'#1a0004', glow:'rgba(186,12,47,0.65)',   glowFar:'rgba(186,12,47,0.2)'},
+  {src:'Assets/League=NHL, Team=Edmonton Oilers.png',         bg:'#001030', glow:'rgba(209,69,32,0.65)',   glowFar:'rgba(209,69,32,0.2)'},
+  {src:'Assets/League=NHL, Team=Florida Panthers.png',        bg:'#1a0005', glow:'rgba(185,15,40,0.65)',   glowFar:'rgba(185,15,40,0.2)'},
+  {src:'Assets/League=NHL, Team=Los Angeles Kings.png',       bg:'#111111', glow:'rgba(162,170,173,0.45)', glowFar:'rgba(162,170,173,0.15)'},
+  {src:'Assets/League=NHL, Team=Minnesota Wild.png',          bg:'#0a2419', glow:'rgba(18,71,52,0.7)',     glowFar:'rgba(18,71,52,0.22)'},
+  {src:'Assets/League=NHL, Team=Montreal Canadiens.png',      bg:'#1a0006', glow:'rgba(175,30,45,0.65)',   glowFar:'rgba(175,30,45,0.2)'},
+  {src:'Assets/League=NHL, Team=Nashville Predators.png',     bg:'#1a1200', glow:'rgba(255,184,28,0.65)',  glowFar:'rgba(255,184,28,0.2)'},
+  {src:'Assets/League=NHL, Team=New Jersey Devils.png',       bg:'#1a0005', glow:'rgba(206,17,38,0.65)',   glowFar:'rgba(206,17,38,0.2)'},
+  {src:'Assets/League=NHL, Team=New York Islanders.png',      bg:'#00081a', glow:'rgba(0,83,155,0.65)',    glowFar:'rgba(0,83,155,0.2)'},
+  {src:'Assets/League=NHL, Team=New York Rangers.png',        bg:'#00051a', glow:'rgba(0,56,168,0.65)',    glowFar:'rgba(0,56,168,0.2)'},
+  {src:'Assets/League=NHL, Team=Ottawa Senators.png',         bg:'#1a0005', glow:'rgba(182,27,45,0.65)',   glowFar:'rgba(182,27,45,0.2)'},
+  {src:'Assets/League=NHL, Team=Philadelphia Flyers.png',     bg:'#1a0900', glow:'rgba(247,73,2,0.65)',    glowFar:'rgba(247,73,2,0.2)'},
+  {src:'Assets/League=NHL, Team=Pittsburgh Penguins.png',     bg:'#1a1200', glow:'rgba(252,181,20,0.65)',  glowFar:'rgba(252,181,20,0.2)'},
+  {src:'Assets/League=NHL, Team=San Jose Sharks.png',         bg:'#001a22', glow:'rgba(0,109,128,0.65)',   glowFar:'rgba(243,136,11,0.18)'},
+  {src:'Assets/League=NHL, Team=Seattle Kraken.png',          bg:'#001016', glow:'rgba(53,96,130,0.65)',   glowFar:'rgba(53,96,130,0.2)'},
+  {src:'Assets/League=NHL, Team=St. Louis Blues.png',         bg:'#00051a', glow:'rgba(0,47,135,0.65)',    glowFar:'rgba(0,47,135,0.2)'},
+  {src:'Assets/League=NHL, Team=Tampa Bay Lightning.png',     bg:'#00051a', glow:'rgba(0,40,104,0.65)',    glowFar:'rgba(0,40,104,0.2)'},
+  {src:'Assets/League=NHL, Team=Toronto Maple Leafs.png',     bg:'#00051a', glow:'rgba(0,32,91,0.65)',     glowFar:'rgba(0,32,91,0.2)'},
+  {src:'Assets/League=NHL, Team=Utah Hockey Club.png',        bg:'#00081a', glow:'rgba(52,88,132,0.65)',   glowFar:'rgba(52,88,132,0.2)'},
+  {src:'Assets/League=NHL, Team=Vancouver Canucks.png',       bg:'#00051a', glow:'rgba(0,32,91,0.65)',     glowFar:'rgba(10,80,30,0.2)'},
+  {src:'Assets/League=NHL, Team=Vegas Golden Knights.png',    bg:'#141008', glow:'rgba(180,151,90,0.65)',  glowFar:'rgba(180,151,90,0.2)'},
+  {src:'Assets/League=NHL, Team=Washington Capitals.png',     bg:'#1a0005', glow:'rgba(166,25,46,0.65)',   glowFar:'rgba(166,25,46,0.2)'},
+  {src:'Assets/League=NHL, Team=Winnipeg Jets.png',           bg:'#00031a', glow:'rgba(4,30,66,0.65)',     glowFar:'rgba(4,30,66,0.2)'},
+];
+
+function pickRandom4(){
+  const shuffled=[...ALL_TEAMS].sort(()=>Math.random()-0.5);
+  return shuffled.slice(0,4);
+}
+
+// ── POOL HERO ──
+function PoolHero({user,myEntry,scored,bracket,onGoToPicks}){
+  const pickerCount=scored.filter(u=>u.picks).length;
+  const r=myEntry?.rank;
+  const suffix=r===1?'st':r===2?'nd':r===3?'rd':'th';
+  const rankText=r?`${r}${suffix} of ${pickerCount}`:bracket.status==='open'?'No picks submitted yet':'';
+  const logos=React.useMemo(()=>pickRandom4(),[]);
+  return(
+    <div className="pool-hero">
+      {logos.map((l,i)=>(
+        <div key={i} className={`hero-logo hero-logo-${i+1}`} style={{background:l.bg,boxShadow:`0 0 32px 10px ${l.glow.replace(/[\d.]+\)$/,a=>+(+a.slice(0,-1)/2).toFixed(2)+')')}, 0 0 80px 30px ${l.glowFar.replace(/[\d.]+\)$/,a=>+(+a.slice(0,-1)/2).toFixed(2)+')')}`}}>
+          <img src={l.src} style={{width:56,height:56,objectFit:'contain'}}/>
+        </div>
+      ))}
+      <div className="pool-hero-name">{user.username}</div>
+      {rankText&&<div className="pool-hero-meta">{rankText}</div>}
+      {!user.picks&&bracket.status==='open'&&(
+        <button className="btn btn-ghost btn-sm" style={{marginTop:16,position:'relative',zIndex:2,borderColor:'rgba(255,255,255,0.2)',color:'rgba(255,255,255,0.7)'}} onClick={onGoToPicks}>Make Your Picks →</button>
+      )}
+    </div>
   );
 }
 
@@ -798,24 +924,21 @@ function PoolView({user,data,onRefresh,onGoToPicks}){
   const rankIcon=r=>r===1?'🥇':r===2?'🥈':r===3?'🥉':r;
 
   return(
+    <>
+    <PoolHero user={user} myEntry={myEntry} scored={scored} bracket={bracket} onGoToPicks={onGoToPicks}/>
     <div className="page">
       <div className="hero-card">
         <div className="hero-label">Your Score · {bracket.season}</div>
         <div className="hero-score">{user.picks?myScore:'—'}</div>
         <div className="hero-sub">
           {user.picks
-            ?`${myEntry?.rank?`Rank #${myEntry.rank} of ${scored.filter(u=>u.picks).length} · `:''}${maxAvail} pts available so far`
-            :bracket.status==='open'?"You haven't submitted picks yet":'Picks not yet open'}
+            ?`${maxAvail} pts available so far`
+            :bracket.status==='open'?"Submit your picks to appear on the board":'Picks not yet open'}
         </div>
-        {!user.picks&&bracket.status==='open'&&<button className="btn btn-ghost btn-sm" style={{marginTop:16,borderColor:'rgba(255,255,255,0.3)',color:'#fff'}} onClick={onGoToPicks}>Make Your Picks →</button>}
       </div>
 
       <div className="flex gap-2 mb-3 flex-wrap">
-        <div className="stat-pill"><div className="stat-value">{data.users.length}</div><div className="stat-label">Members</div></div>
-        <div className="stat-pill"><div className="stat-value">{data.users.filter(u=>u.picks).length}</div><div className="stat-label">Picks In</div></div>
-        <div className="stat-pill"><div className="stat-value">{bracket.season}</div><div className="stat-label">Season</div></div>
         <div className="stat-pill"><div className="stat-value"><span className={`badge badge-${st.type}`}>{st.label}</span></div><div className="stat-label">Status</div></div>
-        <div className="stat-pill" style={{cursor:'pointer'}} onClick={onRefresh}><div className="stat-value" style={{fontSize:'1.2rem'}}>↻</div><div className="stat-label">Refresh</div></div>
       </div>
 
       <div className="card mb-3">
@@ -860,6 +983,7 @@ function PoolView({user,data,onRefresh,onGoToPicks}){
         <div className="scoring-row"><span className="text-dim">Maximum possible</span><span className="pts-chip">425 pts</span></div>
       </div>
     </div>
+    </>
   );
 }
 
@@ -880,21 +1004,82 @@ function SeriesPicker({label,team1,team2,pick,onChange,disabled,result}){
   );
 }
 
-// ── MY PICKS ──
+// ── MY PICKS (WIZARD) ──
 function MyPicksPage({user,data,onSavePicks}){
   const {bracket}=data;
   const locked=bracket.status==='locked'||bracket.status==='complete';
   const setup=bracket.status==='setup';
   const init=()=>user.picks||{r1:Array(8).fill(null),r2:Array(4).fill(null),r3:Array(2).fill(null),r4:Array(1).fill(null)};
   const [picks,setPicks]=useState(init);
-  const [saving,setSaving]=useState(false);const [tab,setTab]=useState('r1');
-  useEffect(()=>setPicks(init()),[user.id]);
-  function setPick(round,idx,val){setPicks(p=>{const n={...p,[round]:[...p[round]]};n[round][idx]=val;return n;});}
-  async function handleSave(){setSaving(true);await onSavePicks(picks);setSaving(false);}
-  const r2t=r2Teams(picks,bracket.round1);const r3t=r3Teams(picks);const r4t=r4Teams(picks);
-  const tabs=[{key:'r1',label:'Round 1'},{key:'r2',label:'Round 2'},{key:'r3',label:'Conf Finals'},{key:'r4',label:'Cup Final'}];
+  const [step,setStep]=useState(0);
+  const [saving,setSaving]=useState(false);
+  const [mode,setMode]=useState(user.picks?'overview':'wizard'); // 'wizard'|'overview'
+  const [lockedTab,setLockedTab]=useState('r1');
+  useEffect(()=>{setPicks(init());setStep(0);setMode(user.picks?'overview':'wizard');},[user.id]);
 
-  const hasPick=picks.r1.some(Boolean)||picks.r2.some(Boolean)||picks.r3.some(Boolean)||picks.r4.some(Boolean);
+  const r2t=r2Teams(picks,bracket.round1);
+  const r3t=r3Teams(picks);
+  const r4t=r4Teams(picks);
+
+  const STEPS=[
+    {round:'r1',idx:0,roundLabel:'Round 1',conf:'Eastern Conference',team1:bracket.round1[0]?.team1,team2:bracket.round1[0]?.team2},
+    {round:'r1',idx:1,roundLabel:'Round 1',conf:'Eastern Conference',team1:bracket.round1[1]?.team1,team2:bracket.round1[1]?.team2},
+    {round:'r1',idx:2,roundLabel:'Round 1',conf:'Eastern Conference',team1:bracket.round1[2]?.team1,team2:bracket.round1[2]?.team2},
+    {round:'r1',idx:3,roundLabel:'Round 1',conf:'Eastern Conference',team1:bracket.round1[3]?.team1,team2:bracket.round1[3]?.team2},
+    {round:'r1',idx:4,roundLabel:'Round 1',conf:'Western Conference',team1:bracket.round1[4]?.team1,team2:bracket.round1[4]?.team2},
+    {round:'r1',idx:5,roundLabel:'Round 1',conf:'Western Conference',team1:bracket.round1[5]?.team1,team2:bracket.round1[5]?.team2},
+    {round:'r1',idx:6,roundLabel:'Round 1',conf:'Western Conference',team1:bracket.round1[6]?.team1,team2:bracket.round1[6]?.team2},
+    {round:'r1',idx:7,roundLabel:'Round 1',conf:'Western Conference',team1:bracket.round1[7]?.team1,team2:bracket.round1[7]?.team2},
+    {round:'r2',idx:0,roundLabel:'Round 2',conf:'Eastern Conference',team1:r2t[0].team1,team2:r2t[0].team2},
+    {round:'r2',idx:1,roundLabel:'Round 2',conf:'Eastern Conference',team1:r2t[1].team1,team2:r2t[1].team2},
+    {round:'r2',idx:2,roundLabel:'Round 2',conf:'Western Conference',team1:r2t[2].team1,team2:r2t[2].team2},
+    {round:'r2',idx:3,roundLabel:'Round 2',conf:'Western Conference',team1:r2t[3].team1,team2:r2t[3].team2},
+    {round:'r3',idx:0,roundLabel:'Conference Final',conf:'Eastern Conference',team1:r3t[0].team1,team2:r3t[0].team2},
+    {round:'r3',idx:1,roundLabel:'Conference Final',conf:'Western Conference',team1:r3t[1].team1,team2:r3t[1].team2},
+    {round:'r4',idx:0,roundLabel:'🏆 Stanley Cup Final',conf:'',team1:r4t[0].team1,team2:r4t[0].team2},
+  ];
+  const totalSteps=STEPS.length;
+  const cur=STEPS[Math.min(step,totalSteps-1)];
+  const curPick=picks[cur.round]?.[cur.idx];
+  const completedCount=STEPS.filter(s=>picks[s.round]?.[s.idx]?.winner&&picks[s.round]?.[s.idx]?.length).length;
+  const allDone=completedCount===totalSteps;
+
+  function setPick(round,idx,val){setPicks(p=>{const n={...p,[round]:[...p[round]]};n[round][idx]=val;return n;});}
+  function handleTeamClick(team){if(!team)return;setPick(cur.round,cur.idx,{...(curPick||{}),winner:team,length:(curPick?.length)||null});}
+  function handleGamesClick(n){
+    setPick(cur.round,cur.idx,{...(curPick||{}),length:n});
+    if(step<totalSteps-1)setTimeout(()=>setStep(s=>s+1),350);
+  }
+  async function handleFinish(){setSaving(true);await onSavePicks(picks);setSaving(false);setMode('overview');}
+
+  const logoSrc=name=>`Assets/League=NHL, Team=${name}.png`;
+  const isLastStep=step===totalSteps-1;
+
+  // shared team card renderer
+  function TeamCard({team,ti,isSel,isOther,accent,onClick}){
+    return(
+      <div onClick={onClick}
+           style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:10,
+             padding:'28px 12px 20px',borderRadius:14,
+             cursor:team?'pointer':'default',userSelect:'none',
+             background:isSel?`rgba(${accent},0.1)`:'var(--bg2)',
+             border:isSel?`2px solid rgb(${accent})`:'1px solid var(--border)',
+             opacity:isOther?0.28:1,
+             transition:'all .18s ease',
+             transform:isSel?'scale(1.03)':'scale(1)',
+           }}>
+        {team?(
+          <>
+            <img src={logoSrc(team)} style={{width:80,height:80,objectFit:'contain'}} onError={e=>{e.target.style.display='none';}}/>
+            <div style={{fontSize:'0.85rem',fontWeight:700,textAlign:'center',color:'var(--text)',lineHeight:1.3}}>{team}</div>
+            {isSel&&<div style={{fontSize:'0.6rem',fontWeight:700,color:`rgb(${accent})`,textTransform:'uppercase',letterSpacing:'1px',marginTop:2}}>Selected ✓</div>}
+          </>
+        ):(
+          <div style={{color:'var(--text3)',fontSize:'0.8rem',height:80,display:'flex',alignItems:'center',justifyContent:'center'}}>TBD</div>
+        )}
+      </div>
+    );
+  }
 
   if(setup)return(
     <div className="page">
@@ -907,24 +1092,404 @@ function MyPicksPage({user,data,onSavePicks}){
     </div>
   );
 
-  return(
-    <div className="page">
-      <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
-        <div className="page-title" style={{marginBottom:0}}>
-          {locked?'My Bracket':'Make Your Picks'}
-        </div>
-        {!locked&&hasPick&&<button className="btn btn-gold btn-sm" onClick={handleSave} disabled={saving}>{saving?'Saving…':'💾 Save Picks'}</button>}
+  if(locked){
+    const ltabs=[{key:'r1',label:'Round 1'},{key:'r2',label:'Round 2'},{key:'r3',label:'Conf Finals'},{key:'r4',label:'Cup Final'}];
+    return(
+      <div className="page">
+        <div className="page-title" style={{marginBottom:16}}>My Bracket</div>
+        <Alert type="warn">Picks are locked — this is your submitted bracket.</Alert>
+        <div className="tabs" style={{marginTop:16}}>{ltabs.map(t=><button key={t.key} className={`tab${lockedTab===t.key?' active':''}`} onClick={()=>setLockedTab(t.key)}>{t.label}</button>)}</div>
+        {lockedTab==='r1'&&<><div className="conf-label">Eastern Conference</div><div className="grid-2 mb-3">{[0,1,2,3].map(i=><SeriesPicker key={i} label={`East Series ${i+1}`} team1={bracket.round1[i].team1} team2={bracket.round1[i].team2} pick={picks.r1[i]} onChange={()=>{}} disabled result={bracket.results.r1[i]}/>)}</div><div className="conf-label">Western Conference</div><div className="grid-2">{[4,5,6,7].map((i,n)=><SeriesPicker key={i} label={`West Series ${n+1}`} team1={bracket.round1[i].team1} team2={bracket.round1[i].team2} pick={picks.r1[i]} onChange={()=>{}} disabled result={bracket.results.r1[i]}/>)}</div></>}
+        {lockedTab==='r2'&&<><div className="conf-label">Eastern Conference</div><div className="grid-2 mb-3">{[0,1].map(i=><SeriesPicker key={i} label={r2t[i].label} team1={r2t[i].team1} team2={r2t[i].team2} pick={picks.r2[i]} onChange={()=>{}} disabled result={bracket.results.r2[i]}/>)}</div><div className="conf-label">Western Conference</div><div className="grid-2">{[2,3].map(i=><SeriesPicker key={i} label={r2t[i].label} team1={r2t[i].team1} team2={r2t[i].team2} pick={picks.r2[i]} onChange={()=>{}} disabled result={bracket.results.r2[i]}/>)}</div></>}
+        {lockedTab==='r3'&&<div className="grid-2">{[0,1].map(i=><SeriesPicker key={i} label={r3t[i].label} team1={r3t[i].team1} team2={r3t[i].team2} pick={picks.r3[i]} onChange={()=>{}} disabled result={bracket.results.r3[i]}/>)}</div>}
+        {lockedTab==='r4'&&<div style={{maxWidth:440,margin:'0 auto'}}><SeriesPicker label={r4t[0].label} team1={r4t[0].team1} team2={r4t[0].team2} pick={picks.r4[0]} onChange={()=>{}} disabled result={bracket.results.r4[0]}/></div>}
       </div>
-      {locked&&<Alert type="warn">Picks are locked — this is your submitted bracket.</Alert>}
-      {!locked&&!user.picks&&<Alert type="info">Pick a winner and series length for every matchup, then save. You can come back and edit until the playoffs start.</Alert>}
-      <div className="tabs">{tabs.map(t=><button key={t.key} className={`tab${tab===t.key?' active':''}`} onClick={()=>setTab(t.key)}>{t.label}</button>)}</div>
-      {tab==='r1'&&<><div className="conf-label">Eastern Conference</div><div className="grid-2 mb-3">{[0,1,2,3].map(i=><SeriesPicker key={i} label={`East Series ${i+1}`} team1={bracket.round1[i].team1} team2={bracket.round1[i].team2} pick={picks.r1[i]} onChange={v=>setPick('r1',i,v)} disabled={locked} result={bracket.results.r1[i]}/>)}</div><div className="conf-label">Western Conference</div><div className="grid-2">{[4,5,6,7].map((i,n)=><SeriesPicker key={i} label={`West Series ${n+1}`} team1={bracket.round1[i].team1} team2={bracket.round1[i].team2} pick={picks.r1[i]} onChange={v=>setPick('r1',i,v)} disabled={locked} result={bracket.results.r1[i]}/>)}</div></>}
-      {tab==='r2'&&<><div className="conf-label">Eastern Conference</div><div className="grid-2 mb-3">{[0,1].map(i=><SeriesPicker key={i} label={r2t[i].label} team1={r2t[i].team1} team2={r2t[i].team2} pick={picks.r2[i]} onChange={v=>setPick('r2',i,v)} disabled={locked} result={bracket.results.r2[i]}/>)}</div><div className="conf-label">Western Conference</div><div className="grid-2">{[2,3].map(i=><SeriesPicker key={i} label={r2t[i].label} team1={r2t[i].team1} team2={r2t[i].team2} pick={picks.r2[i]} onChange={v=>setPick('r2',i,v)} disabled={locked} result={bracket.results.r2[i]}/>)}</div></>}
-      {tab==='r3'&&<div className="grid-2">{[0,1].map(i=><SeriesPicker key={i} label={r3t[i].label} team1={r3t[i].team1} team2={r3t[i].team2} pick={picks.r3[i]} onChange={v=>setPick('r3',i,v)} disabled={locked} result={bracket.results.r3[i]}/>)}</div>}
-      {tab==='r4'&&<div style={{maxWidth:'440px',margin:'0 auto'}}><SeriesPicker label={r4t[0].label} team1={r4t[0].team1} team2={r4t[0].team2} pick={picks.r4[0]} onChange={v=>setPick('r4',0,v)} disabled={locked} result={bracket.results.r4[0]}/></div>}
-      {!locked&&<div style={{marginTop:24,display:'flex',justifyContent:'flex-end'}}>
-        <button className="btn btn-gold" onClick={handleSave} disabled={saving} style={{minWidth:160}}>{saving?'Saving…':'💾 Submit Picks'}</button>
-      </div>}
+    );
+  }
+
+  // ── OVERVIEW (BRACKET TREE) ──
+  if(mode==='overview'){
+    // Layout constants
+    const CW=136, CH=82, WG=10, PG=20, RG=20, CupW=152;
+    const PH=CH*2+WG;          // 174 — height of one R1 pair
+    const TH=PH*2+PG;          // 368 — total bracket height
+
+    // Column x positions (West → Cup → East)
+    const wR1x=0, wR2x=CW+RG, wCFx=wR2x+CW+RG;
+    const cupX=wCFx+CW+RG;
+    const eCFx=cupX+CupW+RG, eR2x=eCFx+CW+RG, eR1x=eR2x+CW+RG;
+    const totalBW=eR1x+CW;
+
+    // Y positions (top of each card)
+    // West R1 order: R1[4], R1[7], R1[5], R1[6]  (seeded: D1,WC,D2,D3)
+    const r1y=[0, CH+WG, PH+PG, PH+PG+CH+WG];
+    const r2y=[PH/2-CH/2, PH+PG+PH/2-CH/2]; // centered in each pair
+    const cfY=TH/2-CH/2;                      // centered in full height
+    const cY=y=>y+CH/2;                       // center of a card at top y
+
+    // Build SVG connector lines
+    const lines=[];
+    const L=(x1,y1,x2,y2)=>lines.push([x1,y1,x2,y2]);
+    const bracketConn=(topY,botY,edgeX,r2Y,r2EdgeX)=>{
+      const mx=(edgeX+r2EdgeX)/2;
+      L(edgeX,cY(topY),mx,cY(topY));
+      L(edgeX,cY(botY),mx,cY(botY));
+      L(mx,cY(topY),mx,cY(botY));
+      L(mx,cY(r2Y),r2EdgeX,cY(r2Y));
+    };
+
+    // West side (left→right)
+    bracketConn(r1y[0],r1y[1],wR1x+CW,r2y[0],wR2x);   // R1[4,7] → R2[2]
+    bracketConn(r1y[2],r1y[3],wR1x+CW,r2y[1],wR2x);   // R1[5,6] → R2[3]
+    bracketConn(r2y[0],r2y[1],wR2x+CW,cfY,wCFx);      // R2[2,3] → West CF
+    L(wCFx+CW,cY(cfY),cupX,cY(cfY));                   // West CF → Cup
+
+    // East side (right→left, same logic since L() is directionless)
+    bracketConn(r1y[0],r1y[1],eR1x,r2y[0],eR2x+CW);   // R1[0,3] → R2[0]
+    bracketConn(r1y[2],r1y[3],eR1x,r2y[1],eR2x+CW);   // R1[1,2] → R2[1]
+    bracketConn(r2y[0],r2y[1],eR2x,cfY,eCFx+CW);      // R2[0,1] → East CF
+    L(eCFx,cY(cfY),cupX+CupW,cY(cfY));                 // East CF → Cup
+
+    // Bracket card component
+    const BCard=({t1,t2,pick,res,gold=false})=>{
+      const winner=pick?.winner, actual=res?.winner;
+      const isTBD=t=>!t||t.includes('Winner')||t.includes('Champ')||t==='TBD';
+      const row=(team,isTop)=>{
+        const safe=team||'TBD', tbd=isTBD(safe);
+        const isPicked=!tbd&&winner===safe;
+        const isWin=actual===safe;
+        const isLose=actual&&actual!==safe;
+        return(
+          <div style={{
+            flex:1,display:'flex',alignItems:'center',gap:5,padding:'0 7px',
+            borderBottom:isTop?`1px solid ${gold?'rgba(245,166,35,0.15)':'var(--border)'}`:'none',
+            background:isWin?(gold?'rgba(245,166,35,0.18)':'rgba(52,211,153,0.07)'):isPicked?(gold?'rgba(245,166,35,0.1)':'rgba(124,92,252,0.08)'):'transparent',
+            opacity:isLose?0.28:1,transition:'opacity .15s',
+          }}>
+            {!tbd&&<img src={logoSrc(safe)} style={{width:18,height:18,objectFit:'contain',flexShrink:0}} onError={e=>{e.target.style.display='none';}}/>}
+            <span style={{
+              fontSize:'0.68rem',flex:1,fontWeight:isPicked||isWin?700:400,
+              color:isWin?(gold?'#f5a623':'var(--green)'):isPicked?'var(--text)':'var(--text3)',
+              overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',
+            }}>{safe}</span>
+            {isPicked&&pick?.length&&winner===safe&&<span style={{fontSize:'0.52rem',color:gold?'rgba(245,166,35,0.6)':'var(--text3)',flexShrink:0,marginLeft:2}}>·{pick.length}</span>}
+            {isPicked&&!actual&&<span style={{fontSize:'0.5rem',color:gold?'#f5a623':'var(--purple)',fontWeight:700,flexShrink:0,marginLeft:2}}>✓</span>}
+            {isWin&&<span style={{fontSize:'0.5rem',color:gold?'#f5a623':'var(--green)',fontWeight:700,flexShrink:0,marginLeft:2}}>✓</span>}
+          </div>
+        );
+      };
+      return(
+        <div style={{
+          width:CW,height:CH,background:'var(--bg2)',
+          border:`1px solid ${gold?'rgba(245,166,35,0.3)':winner?'rgba(124,92,252,0.25)':'var(--border)'}`,
+          borderRadius:8,overflow:'hidden',display:'flex',flexDirection:'column',
+        }}>
+          {row(t1,true)}{row(t2,false)}
+        </div>
+      );
+    };
+
+    return(
+      <div style={{padding:'28px 0 110px'}}>
+        {/* Header */}
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20,padding:'0 20px'}}>
+          <div className="page-title" style={{marginBottom:0}}>Your Picks</div>
+          {bracket.status==='open'&&(
+            <button className="btn btn-ghost btn-sm" onClick={()=>{setStep(0);setMode('wizard');}}>✏️ Edit Picks</button>
+          )}
+        </div>
+        <div style={{background:'rgba(52,211,153,0.07)',border:'1px solid rgba(52,211,153,0.18)',borderRadius:8,padding:'10px 16px',marginBottom:24,display:'flex',alignItems:'center',gap:10,margin:'0 20px 24px'}}>
+          <span style={{color:'var(--green)'}}>✓</span>
+          <span style={{fontSize:'0.83rem',color:'var(--text2)'}}>All {totalSteps} picks submitted.{bracket.status==='open'?' Edit until picks are locked.':''}</span>
+        </div>
+
+        {/* Scrollable bracket */}
+        <div style={{overflowX:'auto',WebkitOverflowScrolling:'touch',padding:'0 20px 12px'}}>
+          <div style={{position:'relative',width:totalBW,height:TH+48,minWidth:totalBW}}>
+
+            {/* Conference labels */}
+            <div style={{position:'absolute',top:0,left:0,width:wCFx+CW,fontSize:'0.58rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'1.5px',color:'var(--text3)'}}>Western Conference</div>
+            <div style={{position:'absolute',top:0,right:0,width:totalBW-eCFx,fontSize:'0.58rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'1.5px',color:'var(--text3)',textAlign:'right'}}>Eastern Conference</div>
+
+            {/* Cards (offset by 18px for labels) */}
+            <div style={{position:'absolute',top:18,left:0,width:totalBW,height:TH}}>
+
+              {/* SVG connector lines */}
+              <svg style={{position:'absolute',top:0,left:0,width:totalBW,height:TH,pointerEvents:'none'}}>
+                {lines.map(([x1,y1,x2,y2],i)=>(
+                  <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(255,255,255,0.1)" strokeWidth="1"/>
+                ))}
+              </svg>
+
+              {/* West R1: [4,7,5,6] */}
+              {[[4,r1y[0]],[7,r1y[1]],[5,r1y[2]],[6,r1y[3]]].map(([ri,y])=>(
+                <div key={ri} style={{position:'absolute',left:wR1x,top:y}}>
+                  <BCard t1={bracket.round1[ri]?.team1} t2={bracket.round1[ri]?.team2} pick={picks.r1[ri]} res={bracket.results.r1[ri]}/>
+                </div>
+              ))}
+
+              {/* West R2: r2t[2], r2t[3] */}
+              {[[2,r2y[0]],[3,r2y[1]]].map(([ri,y])=>(
+                <div key={ri} style={{position:'absolute',left:wR2x,top:y}}>
+                  <BCard t1={r2t[ri].team1} t2={r2t[ri].team2} pick={picks.r2[ri]} res={bracket.results.r2[ri]}/>
+                </div>
+              ))}
+
+              {/* West CF: r3t[1] */}
+              <div style={{position:'absolute',left:wCFx,top:cfY}}>
+                <BCard t1={r3t[1].team1} t2={r3t[1].team2} pick={picks.r3[1]} res={bracket.results.r3[1]}/>
+              </div>
+
+              {/* Cup Final */}
+              <div style={{
+                position:'absolute',left:cupX,top:cfY,width:CupW,height:CH,
+                background:'rgba(245,166,35,0.06)',border:'1px solid rgba(245,166,35,0.28)',
+                borderRadius:8,overflow:'hidden',display:'flex',flexDirection:'column',
+              }}>
+                <div style={{padding:'2px 7px',fontSize:'0.5rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'1px',color:'rgba(245,166,35,0.55)',background:'rgba(245,166,35,0.06)',borderBottom:'1px solid rgba(245,166,35,0.12)',flexShrink:0}}>🏆 Cup Final</div>
+                <div style={{flex:1,display:'flex',flexDirection:'column'}}>
+                  {[r4t[0].team1,r4t[0].team2].map((team,i)=>{
+                    const winner=picks.r4[0]?.winner, actual=bracket.results.r4[0]?.winner;
+                    const tbd=!team||team.includes('Champ');
+                    const isPicked=!tbd&&winner===team;
+                    const isWin=actual===team;
+                    const isLose=actual&&actual!==team;
+                    return(
+                      <div key={i} style={{
+                        flex:1,display:'flex',alignItems:'center',gap:5,padding:'0 7px',
+                        borderBottom:i===0?'1px solid rgba(245,166,35,0.12)':'none',
+                        background:isWin?'rgba(245,166,35,0.18)':isPicked?'rgba(245,166,35,0.1)':'transparent',
+                        opacity:isLose?0.28:1,
+                      }}>
+                        {!tbd&&<img src={logoSrc(team)} style={{width:18,height:18,objectFit:'contain',flexShrink:0}} onError={e=>{e.target.style.display='none';}}/>}
+                        <span style={{fontSize:'0.68rem',flex:1,fontWeight:isPicked||isWin?700:400,color:isWin?'#f5a623':isPicked?'var(--text)':'var(--text3)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{team||'TBD'}</span>
+                        {isPicked&&!actual&&<span style={{fontSize:'0.5rem',color:'#f5a623',fontWeight:700,flexShrink:0}}>✓</span>}
+                        {isWin&&<span style={{fontSize:'0.5rem',color:'#f5a623',fontWeight:700,flexShrink:0}}>✓</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* East CF: r3t[0] */}
+              <div style={{position:'absolute',left:eCFx,top:cfY}}>
+                <BCard t1={r3t[0].team1} t2={r3t[0].team2} pick={picks.r3[0]} res={bracket.results.r3[0]}/>
+              </div>
+
+              {/* East R2: r2t[0], r2t[1] */}
+              {[[0,r2y[0]],[1,r2y[1]]].map(([ri,y])=>(
+                <div key={ri} style={{position:'absolute',left:eR2x,top:y}}>
+                  <BCard t1={r2t[ri].team1} t2={r2t[ri].team2} pick={picks.r2[ri]} res={bracket.results.r2[ri]}/>
+                </div>
+              ))}
+
+              {/* East R1: [0,3,1,2] */}
+              {[[0,r1y[0]],[3,r1y[1]],[1,r1y[2]],[2,r1y[3]]].map(([ri,y])=>(
+                <div key={ri} style={{position:'absolute',left:eR1x,top:y}}>
+                  <BCard t1={bracket.round1[ri]?.team1} t2={bracket.round1[ri]?.team2} pick={picks.r1[ri]} res={bracket.results.r1[ri]}/>
+                </div>
+              ))}
+            </div>
+
+            {/* Round labels at bottom */}
+            {[
+              {x:wR1x, w:CW, label:'Round 1'},
+              {x:wR2x, w:CW, label:'Round 2'},
+              {x:wCFx, w:CW, label:'Conf Final'},
+              {x:cupX, w:CupW, label:'Cup Final', gold:true},
+              {x:eCFx, w:CW, label:'Conf Final'},
+              {x:eR2x, w:CW, label:'Round 2'},
+              {x:eR1x, w:CW, label:'Round 1'},
+            ].map(({x,w,label,gold})=>(
+              <div key={x} style={{position:'absolute',bottom:0,left:x,width:w,textAlign:'center',fontSize:'0.55rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'1px',color:gold?'rgba(245,166,35,0.5)':'var(--text3)'}}>
+                {label}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── TROPHY STEP (Stanley Cup Final) ──
+  if(isLastStep){
+    const goldAccent='245,166,35';
+    return(
+      <div style={{minHeight:'calc(100vh - 90px)',display:'flex',flexDirection:'column',alignItems:'center',paddingBottom:110}}>
+        {/* Gold hero */}
+        <div style={{width:'100%',background:'linear-gradient(180deg,rgba(245,166,35,0.18) 0%,transparent 100%)',display:'flex',flexDirection:'column',alignItems:'center',padding:'56px 24px 40px',textAlign:'center',borderBottom:'1px solid rgba(245,166,35,0.12)'}}>
+          <div style={{fontSize:'5rem',lineHeight:1,marginBottom:20,filter:'drop-shadow(0 0 32px rgba(245,166,35,0.5))'}}>🏆</div>
+          <div style={{fontSize:'0.65rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'3px',color:'rgba(245,166,35,0.7)',marginBottom:10}}>
+            Stanley Cup Final
+          </div>
+          <div style={{fontSize:'1.5rem',fontWeight:700,color:'#fff',letterSpacing:'-0.5px'}}>Who wins the Cup?</div>
+        </div>
+
+        {/* Step dots */}
+        <div style={{display:'flex',gap:4,marginTop:24,marginBottom:24,flexWrap:'wrap',justifyContent:'center',maxWidth:320,padding:'0 20px'}}>
+          {STEPS.map((s,i)=>{
+            const done=picks[s.round]?.[s.idx]?.winner&&picks[s.round]?.[s.idx]?.length;
+            return <div key={i} style={{width:8,height:8,borderRadius:'50%',background:i===step?`rgb(${goldAccent})`:done?`rgba(${goldAccent},0.45)`:'var(--bg4)',flexShrink:0}}/>;
+          })}
+        </div>
+
+        {/* Team cards */}
+        <div style={{display:'flex',gap:10,width:'100%',maxWidth:500,padding:'0 20px',marginBottom:8}}>
+          {[cur.team1,cur.team2].map((team,ti)=>{
+            const isSel=curPick?.winner===team;
+            const isOther=!!(curPick?.winner&&curPick.winner!==team);
+            return <TeamCard key={team||ti} team={team} ti={ti} isSel={isSel} isOther={isOther} accent={goldAccent} onClick={()=>handleTeamClick(team)}/>;
+          })}
+        </div>
+        <div style={{fontSize:'0.7rem',color:'rgba(245,166,35,0.5)',letterSpacing:'2px',fontWeight:600,marginBottom:24}}>vs</div>
+
+        {/* Games picker */}
+        <div style={{minHeight:72,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',marginBottom:32}}>
+          {curPick?.winner?(
+            <>
+              <div style={{fontSize:'0.68rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'1.5px',color:'rgba(245,166,35,0.6)',marginBottom:14}}>How many games?</div>
+              <div style={{display:'flex',gap:10}}>
+                {[4,5,6,7].map(n=>(
+                  <button key={n} onClick={()=>setPick(cur.round,cur.idx,{...(curPick||{}),length:n})}
+                          style={{width:54,height:54,borderRadius:12,fontSize:'1.1rem',fontWeight:700,
+                            cursor:'pointer',fontFamily:'inherit',transition:'all .15s',
+                            background:curPick?.length===n?`rgb(${goldAccent})`:'var(--bg3)',
+                            color:curPick?.length===n?'#000':'var(--text2)',
+                            border:curPick?.length===n?`2px solid rgb(${goldAccent})`:'1px solid var(--border)',
+                            transform:curPick?.length===n?'scale(1.08)':'scale(1)',
+                          }}>
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </>
+          ):(
+            <div style={{fontSize:'0.78rem',color:'rgba(245,166,35,0.5)',textAlign:'center'}}>Tap a team to pick the Cup champion</div>
+          )}
+        </div>
+
+        {/* Finish button */}
+        {curPick?.winner&&curPick?.length&&(
+          <button onClick={handleFinish} disabled={saving}
+                  style={{padding:'16px 48px',borderRadius:12,fontSize:'1rem',fontWeight:700,
+                    cursor:'pointer',fontFamily:'inherit',transition:'all .2s',
+                    background:`linear-gradient(135deg, rgb(${goldAccent}), #e8930a)`,
+                    color:'#000',border:'none',
+                    boxShadow:`0 4px 24px rgba(${goldAccent},0.4)`,
+                    transform:saving?'scale(0.97)':'scale(1)',
+                    marginBottom:16,
+                  }}>
+            {saving?'Saving…':'🏆 Finish'}
+          </button>
+        )}
+
+        {/* Back */}
+        <button className="btn btn-ghost btn-sm" onClick={()=>setStep(s=>s-1)} style={{color:'var(--text3)',marginTop:4}}>← Back</button>
+      </div>
+    );
+  }
+
+  // ── NORMAL WIZARD STEPS ──
+  return(
+    <div className="page" style={{maxWidth:540,paddingTop:28}}>
+
+      {/* Progress bar */}
+      <div style={{marginBottom:40}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+          <span style={{fontSize:'0.7rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'1.5px',color:'var(--text3)'}}>
+            Series {step+1} of {totalSteps}
+          </span>
+          <span style={{fontSize:'0.7rem',color:'var(--text3)'}}>
+            {completedCount}/{totalSteps} complete
+          </span>
+        </div>
+        <div style={{height:3,background:'var(--bg3)',borderRadius:4,overflow:'hidden'}}>
+          <div style={{height:'100%',width:`${(completedCount/totalSteps)*100}%`,background:'var(--purple)',borderRadius:4,transition:'width .4s ease'}}/>
+        </div>
+        <div style={{display:'flex',gap:4,marginTop:10,flexWrap:'wrap'}}>
+          {STEPS.map((s,i)=>{
+            const done=picks[s.round]?.[s.idx]?.winner&&picks[s.round]?.[s.idx]?.length;
+            return(
+              <button key={i} onClick={()=>setStep(i)}
+                style={{width:8,height:8,borderRadius:'50%',border:'none',padding:0,cursor:'pointer',flexShrink:0,
+                  background:i===step?'var(--purple)':done?'rgba(124,92,252,0.4)':'var(--bg4)',
+                  transition:'all .15s'}}>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Round label */}
+      <div style={{textAlign:'center',marginBottom:28}}>
+        <div style={{fontSize:'0.68rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'2px',color:'var(--text3)'}}>
+          {cur.roundLabel}{cur.conf?` · ${cur.conf}`:''}
+        </div>
+      </div>
+
+      {/* Team cards */}
+      <div style={{display:'flex',gap:10,marginBottom:8}}>
+        {[cur.team1,cur.team2].map((team,ti)=>{
+          const isSel=curPick?.winner===team;
+          const isOther=!!(curPick?.winner&&curPick.winner!==team);
+          return <TeamCard key={team||ti} team={team} ti={ti} isSel={isSel} isOther={isOther} accent="124,92,252" onClick={()=>handleTeamClick(team)}/>;
+        })}
+      </div>
+
+      {/* vs divider */}
+      <div style={{textAlign:'center',marginBottom:28,fontSize:'0.7rem',color:'var(--text3)',letterSpacing:'2px',fontWeight:600}}>vs</div>
+
+      {/* Games picker */}
+      <div style={{minHeight:72,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',marginBottom:36}}>
+        {curPick?.winner?(
+          <>
+            <div style={{fontSize:'0.68rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'1.5px',color:'var(--text3)',marginBottom:14}}>How many games?</div>
+            <div style={{display:'flex',gap:10}}>
+              {[4,5,6,7].map(n=>(
+                <button key={n} onClick={()=>handleGamesClick(n)}
+                        style={{width:54,height:54,borderRadius:12,fontSize:'1.1rem',fontWeight:700,
+                          cursor:'pointer',fontFamily:'inherit',transition:'all .15s',
+                          background:curPick?.length===n?'var(--purple)':'var(--bg3)',
+                          color:curPick?.length===n?'#fff':'var(--text2)',
+                          border:curPick?.length===n?'2px solid var(--purple)':'1px solid var(--border)',
+                          transform:curPick?.length===n?'scale(1.08)':'scale(1)',
+                        }}>
+                  {n}
+                </button>
+              ))}
+            </div>
+          </>
+        ):(
+          <div style={{fontSize:'0.78rem',color:'var(--text3)',textAlign:'center'}}>Tap a team to pick the winner</div>
+        )}
+      </div>
+
+      {/* Navigation */}
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <button className="btn btn-ghost" onClick={()=>setStep(s=>Math.max(0,s-1))} disabled={step===0} style={{minWidth:90}}>← Back</button>
+        <div style={{display:'flex',gap:8,alignItems:'center'}}>
+          {!curPick?.winner&&(
+            <button className="btn btn-ghost btn-sm" onClick={()=>setStep(s=>s+1)} style={{color:'var(--text3)',fontSize:'0.72rem'}}>Skip</button>
+          )}
+          <button onClick={()=>setStep(s=>s+1)} disabled={!curPick?.winner}
+                  style={{minWidth:90,padding:'9px 18px',borderRadius:8,fontSize:'0.85rem',fontWeight:600,
+                    cursor:curPick?.winner?'pointer':'default',fontFamily:'inherit',transition:'all .15s',
+                    background:curPick?.winner?'var(--purple)':'var(--bg3)',
+                    color:curPick?.winner?'#fff':'var(--text3)',
+                    border:'none',opacity:curPick?.winner?1:0.45}}>
+            Next →
+          </button>
+        </div>
+      </div>
+
+      {/* Submit shortcut once all done */}
+      {allDone&&(
+        <div style={{marginTop:20,textAlign:'center'}}>
+          <button className="btn btn-gold btn-sm" onClick={handleFinish} disabled={saving}>
+            {saving?'Saving…':'Submit All Picks'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -962,7 +1527,7 @@ function ManageUsersPage({data,onRefresh}){
             <td><span style={{background:'var(--bg3)',border:'1px solid var(--border)',padding:'3px 10px',borderRadius:'6px',fontFamily:'monospace',fontSize:'0.82rem',color:'var(--text2)'}}>{u.password}</span></td>
             <td><span className={`badge badge-${u.is_admin?'admin':'user'}`}>{u.is_admin?'Admin':'Member'}</span></td>
             <td>{u.picks?<span style={{color:'var(--green)',fontWeight:600,fontSize:'0.82rem'}}>✓ Submitted</span>:<span className="text-dim2 text-xs">—</span>}</td>
-            <td><div className="flex gap-1 flex-wrap"><button className="btn btn-ghost btn-sm" onClick={()=>openEdit(u)}>Edit</button>{u.picks&&<button className="btn btn-ghost btn-sm" onClick={()=>handleClear(u)}>Clear</button>}{u.username!=='admin'&&<button className="btn btn-danger btn-sm" onClick={()=>handleDelete(u)}>Delete</button>}</div></td>
+            <td><div className="flex gap-1 flex-wrap"><button className="btn btn-ghost btn-sm" onClick={()=>openEdit(u)}>Edit</button>{u.picks&&<button className="btn btn-ghost btn-sm" onClick={()=>handleClear(u)}>Clear</button>}{u.id!=='admin'&&<button className="btn btn-danger btn-sm" onClick={()=>handleDelete(u)}>Delete</button>}</div></td>
             </tr>
           ))}
         </tbody></table></div>
@@ -987,8 +1552,26 @@ function ManageUsersPage({data,onRefresh}){
 function BracketSetupPage({data,onRefresh}){
   const [bracket,setBracket]=useState(data.bracket);const [msg,setMsg]=useState('');const [msgType,setMsgType]=useState('success');
   const [saving,setSaving]=useState(false);const [importing,setImporting]=useState(false);
+  useEffect(()=>{setBracket(data.bracket);},[data.bracket]);
   function setTeam(idx,field,val){setBracket(p=>{const r1=[...p.round1];r1[idx]={...r1[idx],[field]:val};return{...p,round1:r1};});}
-  async function handleSave(){setSaving(true);await dbSaveConfig(bracket,data.poolId);await onRefresh();setSaving(false);setMsg('Bracket saved!');setMsgType('success');setTimeout(()=>setMsg(''),3000);}
+  async function handleSave(){
+    setSaving(true);
+    try{await dbSaveConfig(bracket,data.poolId);await onRefresh();setMsg('Bracket saved!');setMsgType('success');}
+    catch(e){setMsg('Save failed: '+e.message);setMsgType('danger');}
+    finally{setSaving(false);setTimeout(()=>setMsg(''),4000);}
+  }
+  async function handleStatusChange(newStatus){
+    const updated={...bracket,status:newStatus};
+    setBracket(updated);
+    setSaving(true);
+    const labels={setup:'Setup',open:'Open — accepting picks',locked:'Locked',complete:'Complete'};
+    try{
+      await dbSaveConfig(updated,data.poolId);
+      await onRefresh();
+      setMsg(`Status set to "${labels[newStatus]}" and saved.`);setMsgType('success');
+    }catch(e){setMsg('Save failed: '+e.message);setMsgType('danger');}
+    finally{setSaving(false);setTimeout(()=>setMsg(''),4000);}
+  }
   async function handleImportNHL(){
     setImporting(true);setMsg('');
     try{
@@ -1013,10 +1596,17 @@ function BracketSetupPage({data,onRefresh}){
         </button>
       </div>
       {msg&&<Alert type={msgType}>{msg}</Alert>}
-      <Alert type="info">Enter the 16 playoff teams manually, or use <strong>Import from NHL</strong> to auto-fill from the official bracket. Set status to "Open" when ready for picks.</Alert>
+      <Alert type="info">Enter the 16 playoff teams, then save the bracket. Changing the status saves immediately and takes effect for all players right away.</Alert>
       <div className="card mb-3">
-        <div className="card-title">Pool Status</div>
-        <div className="flex gap-2 flex-wrap">{statusOpts.map(o=><button key={o.v} onClick={()=>setBracket(p=>({...p,status:o.v}))} style={{background:bracket.status===o.v?'var(--grad-purple)':'var(--bg3)',border:'1px solid',borderColor:bracket.status===o.v?'var(--purple)':'var(--border2)',color:bracket.status===o.v?'#fff':'var(--text2)',padding:'9px 18px',borderRadius:'10px',cursor:'pointer',fontSize:'0.86rem',fontWeight:600,fontFamily:'inherit'}}>{o.l} <span style={{opacity:0.7,fontWeight:400,fontSize:'0.78rem'}}>· {o.d}</span></button>)}</div>
+        <div className="card-title">Season</div>
+        <div className="flex gap-2 items-center">
+          <input className="form-input" style={{maxWidth:120}} placeholder="e.g. 2025" value={bracket.season} onChange={e=>setBracket(p=>({...p,season:e.target.value}))}/>
+          <span style={{color:'var(--text3)',fontSize:'0.82rem'}}>Used for NHL import — set to the year playoffs end (e.g. 2025 for the 2024-25 season)</span>
+        </div>
+      </div>
+      <div className="card mb-3">
+        <div className="card-title">Pool Status <span style={{fontSize:'0.72rem',fontWeight:400,color:'var(--text3)',marginLeft:6}}>— changes save instantly</span></div>
+        <div className="flex gap-2 flex-wrap">{statusOpts.map(o=><button key={o.v} onClick={()=>handleStatusChange(o.v)} disabled={saving} style={{background:bracket.status===o.v?'var(--grad-purple)':'var(--bg3)',border:'1px solid',borderColor:bracket.status===o.v?'var(--purple)':'var(--border2)',color:bracket.status===o.v?'#fff':'var(--text2)',padding:'9px 18px',borderRadius:'10px',cursor:'pointer',fontSize:'0.86rem',fontWeight:600,fontFamily:'inherit'}}>{o.l} <span style={{opacity:0.7,fontWeight:400,fontSize:'0.78rem'}}>· {o.d}</span></button>)}</div>
       </div>
       <div className="grid-2">
         <div className="card"><div className="card-title">Eastern Conference — Round 1</div>{[0,1,2,3].map(i=><div key={i} style={{marginBottom:'16px'}}><div className="form-label">East Series {i+1}</div><div className="flex gap-2"><input className="form-input" placeholder="Higher seed" value={bracket.round1[i].team1} onChange={e=>setTeam(i,'team1',e.target.value)}/><input className="form-input" placeholder="Lower seed" value={bracket.round1[i].team2} onChange={e=>setTeam(i,'team2',e.target.value)}/></div></div>)}</div>
@@ -1032,8 +1622,14 @@ function ResultsPage({data,onRefresh}){
   const [results,setResults]=useState(data.bracket.results);const [msg,setMsg]=useState('');const [msgType,setMsgType]=useState('success');
   const [saving,setSaving]=useState(false);const [syncing,setSyncing]=useState(false);
   const {bracket}=data;
+  useEffect(()=>{setResults(data.bracket.results);},[data.bracket.results]);
   function setResult(round,idx,field,val){setResults(p=>{const n={...p,[round]:[...p[round]]};n[round][idx]={...(n[round][idx]||{}),[field]:field==='length'?parseInt(val)||null:val};return n;});}
-  async function handleSave(){setSaving(true);await dbSaveConfig({...bracket,results},data.poolId);await onRefresh();setSaving(false);setMsg('Results saved! Scores updated.');setMsgType('success');setTimeout(()=>setMsg(''),3000);}
+  async function handleSave(){
+    setSaving(true);
+    try{await dbSaveConfig({...bracket,results},data.poolId);await onRefresh();setMsg('Results saved! Scores updated.');setMsgType('success');}
+    catch(e){setMsg('Save failed: '+e.message);setMsgType('danger');}
+    finally{setSaving(false);setTimeout(()=>setMsg(''),3000);}
+  }
   async function handleSyncNHL(){
     setSyncing(true);setMsg('');
     try{
