@@ -9,7 +9,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Faster+One&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Faster+One&family=Rubik+Mono+One&display=swap');
 
     :root {
       --bg:       #0d0d0d;
@@ -98,8 +98,20 @@
     @keyframes blobFloat3 { 0%,100%{transform:translate(-50%,0) scale(1)} 50%{transform:translate(-50%,40px) scale(0.88)} }
     @keyframes grainDrift { 0%{transform:translate(0,0)} 20%{transform:translate(-4px,2px)} 40%{transform:translate(3px,-3px)} 60%{transform:translate(-2px,4px)} 80%{transform:translate(4px,1px)} 100%{transform:translate(0,0)} }
 
-    .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; background: #222327; }
-    .login-grain { position: absolute; inset: -20%; width: 140%; height: 140%; pointer-events: none; z-index: 1; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E"); background-size: 160px 160px; background-repeat: repeat; image-rendering: pixelated; opacity: 0.18; mix-blend-mode: overlay; animation: grainDrift 0.18s steps(1) infinite; }
+    .login-split { display: flex; min-height: 100vh; }
+    .login-half { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 40px; position: relative; overflow: hidden; }
+    .login-half + .login-half { border-left: 1px solid rgba(255,255,255,0.07); }
+    .login-half-logo { width: 72%; max-width: 360px; margin-bottom: 44px; pointer-events: none; }
+    .login-half-form { width: 100%; max-width: 280px; display: flex; flex-direction: column; gap: 12px; }
+    .login-half-btn { width: 100%; padding: 14px 0; border-radius: 10px; border: none; font-size: 1rem; font-weight: 700; font-family: 'Rubik Mono One', monospace; letter-spacing: 0.5px; color: #fff; cursor: pointer; transition: opacity .15s, transform .1s; }
+    .login-half-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+    .login-half-btn:active { transform: translateY(0); }
+    .login-half-input { width: 100%; padding: 12px 16px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; color: #fff; font-size: 0.95rem; font-family: inherit; outline: none; transition: border-color .15s; }
+    .login-half-input:focus { border-color: rgba(255,255,255,0.3); }
+    .login-half-input::placeholder { color: rgba(255,255,255,0.3); }
+    .login-half-err { font-size: 0.8rem; color: #f87171; text-align: center; min-height: 18px; }
+    .login-grain { position: fixed; inset: 0; pointer-events: none; z-index: 100; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E"); background-size: 160px 160px; background-repeat: repeat; image-rendering: pixelated; opacity: 0.12; mix-blend-mode: overlay; animation: grainDrift 0.18s steps(1) infinite; }
+    @media(max-width:700px) { .login-split { flex-direction: column; } .login-half + .login-half { border-left: none; border-top: 1px solid rgba(255,255,255,0.07); } .login-half { padding: 56px 32px; } .login-half-logo { width: 60%; max-width: 260px; margin-bottom: 32px; } }
     .login-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 44px 40px; width: 400px; max-width: 95vw; position: relative; z-index: 2; box-shadow: 0 32px 80px rgba(0,0,0,0.5); }
     .login-logo { text-align: center; margin-bottom: 32px; }
     .login-logo h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: -1px; line-height: 1.1; color: var(--text); margin-bottom: 10px; }
@@ -225,13 +237,7 @@
     .avatar-picker-opt.chosen { border-color: var(--purple); box-shadow: 0 0 0 2px rgba(124,92,252,0.25); }
     .avatar-swatch { width: 48px; height: 48px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; }
 
-    /* ── POOL SELECT ── */
-    .pool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 620px; width: 100%; position: relative; z-index: 2; }
-    .pool-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px 24px; display: flex; flex-direction: column; gap: 18px; transition: border-color .15s; }
-    .pool-card:focus-within { border-color: rgba(124,92,252,0.5); }
-    .pool-card-header { text-align: center; }
-    .pool-card-icon { font-size: 2.4rem; margin-bottom: 10px; }
-    .pool-card-name { font-size: 1.05rem; font-weight: 600; color: var(--text); }
+    h1 { font-family: 'Rubik Mono One', monospace; }
 
     /* ── POOL HERO ── */
     @keyframes heroFloat1 { 0%,100%{transform:translateY(-50%) rotate(-12deg)} 50%{transform:translateY(calc(-50% - 10px)) rotate(-9deg)} }
@@ -239,7 +245,7 @@
     @keyframes heroFloat3 { 0%,100%{transform:rotate(-8deg)} 50%{transform:translateY(-14px) rotate(-5deg)} }
     @keyframes heroFloat4 { 0%,100%{transform:translateY(-50%) rotate(14deg)} 50%{transform:translateY(calc(-50% - 9px)) rotate(11deg)} }
     .pool-hero { position:relative; width:100%; overflow:hidden; background:transparent; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:64px 24px 56px; min-height:260px; }
-    .pool-hero-name { font-size:5.5rem; font-weight:400; letter-spacing:1px; line-height:1; color:#ffffff; text-transform:uppercase; font-family:'Faster One',cursive; position:relative; z-index:2; text-align:center; }
+    .pool-hero-name { font-size:5.5rem; font-weight:400; letter-spacing:1px; line-height:1; color:#ffffff; text-transform:uppercase; font-family:'Rubik Mono One',monospace; position:relative; z-index:2; text-align:center; }
     .pool-hero-meta { font-size:1rem; color:rgba(255,255,255,0.38); margin-top:12px; font-weight:400; position:relative; z-index:2; text-align:center; letter-spacing:0.2px; }
     .hero-logo { position:absolute; border-radius:18px; display:flex; align-items:center; justify-content:center; overflow:hidden; z-index:1; }
     .hero-logo svg { width:56px; height:56px; }
@@ -260,8 +266,7 @@
     }
 
     @media(max-width:700px) {
-      .pool-grid { grid-template-columns: 1fr; }
-      .grid-2 { grid-template-columns: 1fr; }
+.grid-2 { grid-template-columns: 1fr; }
       .page { padding: 20px 14px 110px; }
       .login-box { padding: 32px 24px; }
       .hero-score { font-size: 2.2rem; }
@@ -288,8 +293,8 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 //   ALTER TABLE pool_config ADD COLUMN pool_id text DEFAULT 'plat_family';
 //   ALTER TABLE pool_config ADD CONSTRAINT pool_config_pool_id_key UNIQUE (pool_id);
 const POOLS = [
-  { id:'plat_family', name:'Plat Family',  password:'stevenisthebest', icon:'👨‍👩‍👧', color:'#7c5cfc', grad:'linear-gradient(135deg,#7c5cfc,#3b82f6)' },
-  { id:'the_boys',    name:'The Boys',      password:'boobs',           icon:'🍺',     color:'#f59e0b', grad:'linear-gradient(135deg,#f59e0b,#ef4444)' },
+  { id:'plat_family', name:'Plat Family',  password:'stevenisthebest', icon:'👨‍👩‍👧', color:'#f97316', grad:'linear-gradient(135deg,#f97316,#ea580c)', logo:'Assets/Login-Logo_ThePlatFamily.png', bg:'#111111' },
+  { id:'the_boys',    name:'The Boys',      password:'boobs',           icon:'🍺',     color:'#3b82f6', grad:'linear-gradient(135deg,#3b82f6,#1d4ed8)', logo:'Assets/Login-Logo_TheBoys.png',       bg:'#060606' },
 ];
 
 // ── CONSTANTS ──
@@ -653,45 +658,33 @@ function PoolSelectPage({onLogin}) {
   }
 
   return(
-    <div className="login-wrap">
+    <div className="login-split">
       <div className="login-grain"/>
-      <div style={{position:'relative',zIndex:2,width:'100%',display:'flex',flexDirection:'column',alignItems:'center',padding:'0 20px'}}>
-        <div style={{textAlign:'center',marginBottom:40}}>
-          <img src="Assets/Login-Logo.png" alt="NHL Playoff Pool" style={{maxWidth:320,width:'100%'}}/>
+      {POOLS.map(pool=>(
+        <div key={pool.id} className="login-half" style={{background:pool.bg}}>
+          <img src={pool.logo} alt={pool.name} className="login-half-logo"/>
+          <form className="login-half-form" onSubmit={e=>attempt(pool,e)}>
+            <input
+              className="login-half-input"
+              type="password"
+              placeholder="Password"
+              value={pws[pool.id]}
+              onChange={e=>{setPws(p=>({...p,[pool.id]:e.target.value}));setErrs(p=>({...p,[pool.id]:''}));}}
+              autoComplete="off"
+            />
+            <div className="login-half-err">{errs[pool.id]||''}</div>
+            <button type="submit" className="login-half-btn" style={{background:pool.grad}} disabled={entering===pool.id}>
+              {entering===pool.id?'Entering…':'Play'}
+            </button>
+          </form>
         </div>
-        <div className="pool-grid">
-          {POOLS.map(pool=>(
-            <div key={pool.id} className="pool-card" style={{'--pool-accent':pool.color}}>
-              <div className="pool-card-header">
-                <div className="pool-card-icon">{pool.icon}</div>
-                <div className="pool-card-name">{pool.name}</div>
-              </div>
-              {errs[pool.id]&&<Alert type="danger">{errs[pool.id]}</Alert>}
-              <form onSubmit={e=>attempt(pool,e)}>
-                <div className="form-group" style={{marginBottom:14}}>
-                  <input
-                    className="form-input"
-                    type="password"
-                    placeholder="Password"
-                    value={pws[pool.id]}
-                    onChange={e=>{setPws(p=>({...p,[pool.id]:e.target.value}));setErrs(p=>({...p,[pool.id]:''}));}}
-                    autoComplete="off"
-                  />
-                </div>
-                <button type="submit" className="btn btn-full" style={{background:pool.grad,color:'#fff',borderRadius:12,justifyContent:'center'}} disabled={entering===pool.id}>
-                  {entering===pool.id?'Entering…':'Enter Pool'}
-                </button>
-              </form>
-            </div>
-          ))}
-        </div>
-      </div>
+      ))}
     </div>
   );
 }
 
 // ── PROFILE SELECT ──
-function ProfileSelectPage({users, onSelect, onSignOut, onAdd}) {
+function ProfileSelectPage({users, pool, onSelect, onSignOut, onAdd}) {
   const FALLBACK_COLORS = ['#7c5cfc','#f5a623','#22c55e','#f43f5e','#3b82f6','#ec4899','#14b8a6','#f97316','#8b5cf6','#06b6d4'];
   function fallbackColor(name) { let h=0; for(const c of name) h=(h*31+c.charCodeAt(0))&0x7fffffff; return FALLBACK_COLORS[h%FALLBACK_COLORS.length]; }
   function initials(name) { return name.trim().split(/\s+/).map(w=>w[0]?.toUpperCase()||'').slice(0,2).join('')||'?'; }
@@ -726,8 +719,8 @@ function ProfileSelectPage({users, onSelect, onSignOut, onAdd}) {
       <div className="login-blob login-blob-1"/><div className="login-blob login-blob-2"/><div className="login-blob login-blob-3"/>
       <div className="login-grain"/>
       <div className="profile-header">
-        <div style={{fontSize:'2.5rem',marginBottom:14}}>🏒</div>
-        <h1>NHL Playoff Pool</h1>
+        {pool?.logo&&<img src={pool.logo} alt={pool.name} style={{width:160,marginBottom:16}}/>}
+        <h1>{pool?.name||'NHL Playoff Pool'}</h1>
         <p>Who's playing today?</p>
       </div>
       <div className="profile-grid">
@@ -1778,7 +1771,7 @@ function App(){
   if(appState==='unconfigured') return <NotConfigured/>;
   if(!currentPool) return <PoolSelectPage onLogin={handleLogin}/>;
   if(!data) return <Spinner message="Loading pool…"/>;
-  if(!currentUser) return <ProfileSelectPage users={data.users||[]} onSelect={handleProfileSelect} onSignOut={handleSignOut} onAdd={handleAddProfile}/>;
+  if(!currentUser) return <ProfileSelectPage users={data.users||[]} pool={currentPool} onSelect={handleProfileSelect} onSignOut={handleSignOut} onAdd={handleAddProfile}/>;
 
   const liveUser = data?.users?.find(u=>u.id===currentUser.id) || currentUser;
   const needsPicks = !liveUser.picks && data?.bracket?.status === 'open';
