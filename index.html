@@ -891,7 +891,7 @@ function PoolHero({user,myEntry,scored,bracket,onGoToPicks}){
   return(
     <div className="pool-hero">
       {logos.map((l,i)=>(
-        <div key={i} className={`hero-logo hero-logo-${i+1}`} style={{background:l.bg,boxShadow:`0 0 32px 10px ${l.glow.replace(/[\d.]+\)$/,a=>+(+a.slice(0,-1)/2).toFixed(2)+')')}, 0 0 80px 30px ${l.glowFar.replace(/[\d.]+\)$/,a=>+(+a.slice(0,-1)/2).toFixed(2)+')')}`}}>
+        <div key={i} className={`hero-logo hero-logo-${i+1}`} style={{background:l.glow.replace(/[\d.]+\)$/,'1)'),boxShadow:`0 0 32px 10px ${l.glow.replace(/[\d.]+\)$/,a=>+(+a.slice(0,-1)/2).toFixed(2)+')')}, 0 0 80px 30px ${l.glowFar.replace(/[\d.]+\)$/,a=>+(+a.slice(0,-1)/2).toFixed(2)+')')}`}}>
           <img src={l.src} style={{width:56,height:56,objectFit:'contain'}}/>
         </div>
       ))}
