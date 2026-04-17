@@ -73,7 +73,7 @@
     /* ── BUTTONS ── */
     .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: var(--radius); font-size: 0.85rem; font-weight: 500; cursor: pointer; border: none; transition: all .15s; font-family: inherit; }
     .btn-primary { background: var(--gold); color: #fff; }
-    .btn-primary:hover { background: #6a4de8; }
+    .btn-primary:hover { background: var(--gold2); }
     .btn-gold { background: var(--gold); color: #fff; }
     .btn-gold:hover { background: var(--gold2); }
     .btn-danger { background: rgba(248,113,113,0.15); color: var(--red); border: 1px solid rgba(248,113,113,0.25); }
@@ -1015,7 +1015,7 @@ function MyPicksPage({user,data,onSavePicks}){
   const [saving,setSaving]=useState(false);
   const [mode,setMode]=useState(user.picks?'overview':'wizard'); // 'wizard'|'overview'
   const [lockedTab,setLockedTab]=useState('r1');
-  useEffect(()=>{setPicks(init());setStep(0);setMode(user.picks?'overview':'wizard');},[user.id]);
+  useEffect(()=>{setPicks(init());setStep(0);setMode(user.picks?'overview':'wizard');},[user.id,!!user.picks]);
 
   const r2t=r2Teams(picks,bracket.round1);
   const r3t=r3Teams(picks);
@@ -1200,7 +1200,7 @@ function MyPicksPage({user,data,onSavePicks}){
         </div>
         <div style={{background:'rgba(52,211,153,0.07)',border:'1px solid rgba(52,211,153,0.18)',borderRadius:8,padding:'10px 16px',marginBottom:24,display:'flex',alignItems:'center',gap:10,margin:'0 20px 24px'}}>
           <span style={{color:'var(--green)'}}>✓</span>
-          <span style={{fontSize:'0.83rem',color:'var(--text2)'}}>All {totalSteps} picks submitted.{bracket.status==='open'?' Edit until picks are locked.':''}</span>
+          <span style={{fontSize:'0.83rem',color:'var(--text2)'}}>{allDone?`All ${totalSteps} picks submitted.`:`${completedCount} of ${totalSteps} picks submitted.`}{bracket.status==='open'?' Edit until picks are locked.':''}</span>
         </div>
 
         {/* Scrollable bracket */}
