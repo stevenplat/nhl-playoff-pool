@@ -9,7 +9,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Faster+One&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Faster+One&family=Rubik+Mono+One&display=swap');
 
     :root {
       --bg:       #0d0d0d;
@@ -98,12 +98,20 @@
     @keyframes blobFloat3 { 0%,100%{transform:translate(-50%,0) scale(1)} 50%{transform:translate(-50%,40px) scale(0.88)} }
     @keyframes grainDrift { 0%{transform:translate(0,0)} 20%{transform:translate(-4px,2px)} 40%{transform:translate(3px,-3px)} 60%{transform:translate(-2px,4px)} 80%{transform:translate(4px,1px)} 100%{transform:translate(0,0)} }
 
-    .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; background: #080808; }
-    .login-blob { position: absolute; border-radius: 50%; pointer-events: none; }
-    .login-blob-1 { width: 700px; height: 620px; background: radial-gradient(ellipse, rgba(124,92,252,0.22) 0%, transparent 70%); top: -180px; left: -160px; filter: blur(80px); animation: blobFloat1 20s ease-in-out infinite; }
-    .login-blob-2 { width: 580px; height: 580px; background: radial-gradient(ellipse, rgba(94,53,224,0.16) 0%, transparent 70%); bottom: -180px; right: -140px; filter: blur(90px); animation: blobFloat2 16s ease-in-out infinite; }
-    .login-blob-3 { width: 460px; height: 460px; background: radial-gradient(ellipse, rgba(124,92,252,0.1) 0%, transparent 70%); top: 42%; left: 50%; transform: translateX(-50%); filter: blur(100px); animation: blobFloat3 24s ease-in-out infinite; }
-    .login-grain { position: absolute; inset: -20%; width: 140%; height: 140%; pointer-events: none; z-index: 1; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E"); background-size: 160px 160px; background-repeat: repeat; image-rendering: pixelated; opacity: 0.04; mix-blend-mode: screen; animation: grainDrift 0.18s steps(1) infinite; }
+    .login-split { display: flex; min-height: 100vh; }
+    .login-half { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 40px; position: relative; overflow: hidden; }
+    .login-half + .login-half { border-left: 1px solid rgba(255,255,255,0.07); }
+    .login-half-logo { width: 72%; max-width: 360px; margin-bottom: 44px; pointer-events: none; }
+    .login-half-form { width: 100%; max-width: 280px; display: flex; flex-direction: column; gap: 12px; }
+    .login-half-btn { width: 100%; padding: 14px 0; border-radius: 10px; border: none; font-size: 1rem; font-weight: 700; font-family: 'Rubik Mono One', monospace; letter-spacing: 0.5px; color: #fff; cursor: pointer; transition: opacity .15s, transform .1s; }
+    .login-half-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+    .login-half-btn:active { transform: translateY(0); }
+    .login-half-input { width: 100%; padding: 12px 16px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; color: #fff; font-size: 0.95rem; font-family: inherit; outline: none; transition: border-color .15s; }
+    .login-half-input:focus { border-color: rgba(255,255,255,0.3); }
+    .login-half-input::placeholder { color: rgba(255,255,255,0.3); }
+    .login-half-err { font-size: 0.8rem; color: #f87171; text-align: center; min-height: 18px; }
+    .login-grain { position: fixed; inset: 0; pointer-events: none; z-index: 100; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E"); background-size: 160px 160px; background-repeat: repeat; image-rendering: pixelated; opacity: 0.12; mix-blend-mode: overlay; animation: grainDrift 0.18s steps(1) infinite; }
+    @media(max-width:700px) { .login-split { flex-direction: column; } .login-half + .login-half { border-left: none; border-top: 1px solid rgba(255,255,255,0.07); } .login-half { padding: 56px 32px; } .login-half-logo { width: 60%; max-width: 260px; margin-bottom: 32px; } }
     .login-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 44px 40px; width: 400px; max-width: 95vw; position: relative; z-index: 2; box-shadow: 0 32px 80px rgba(0,0,0,0.5); }
     .login-logo { text-align: center; margin-bottom: 32px; }
     .login-logo h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: -1px; line-height: 1.1; color: var(--text); margin-bottom: 10px; }
@@ -229,13 +237,7 @@
     .avatar-picker-opt.chosen { border-color: var(--purple); box-shadow: 0 0 0 2px rgba(124,92,252,0.25); }
     .avatar-swatch { width: 48px; height: 48px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; }
 
-    /* ── POOL SELECT ── */
-    .pool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 620px; width: 100%; position: relative; z-index: 2; }
-    .pool-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px 24px; display: flex; flex-direction: column; gap: 18px; transition: border-color .15s; }
-    .pool-card:focus-within { border-color: rgba(124,92,252,0.5); }
-    .pool-card-header { text-align: center; }
-    .pool-card-icon { font-size: 2.4rem; margin-bottom: 10px; }
-    .pool-card-name { font-size: 1.05rem; font-weight: 600; color: var(--text); }
+    h1 { font-family: 'Rubik Mono One', monospace; }
 
     /* ── POOL HERO ── */
     @keyframes heroFloat1 { 0%,100%{transform:translateY(-50%) rotate(-12deg)} 50%{transform:translateY(calc(-50% - 10px)) rotate(-9deg)} }
@@ -243,7 +245,7 @@
     @keyframes heroFloat3 { 0%,100%{transform:rotate(-8deg)} 50%{transform:translateY(-14px) rotate(-5deg)} }
     @keyframes heroFloat4 { 0%,100%{transform:translateY(-50%) rotate(14deg)} 50%{transform:translateY(calc(-50% - 9px)) rotate(11deg)} }
     .pool-hero { position:relative; width:100%; overflow:hidden; background:transparent; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:64px 24px 56px; min-height:260px; }
-    .pool-hero-name { font-size:5.5rem; font-weight:400; letter-spacing:1px; line-height:1; color:#b5ccdb; text-transform:uppercase; font-family:'Faster One',cursive; position:relative; z-index:2; text-align:center; }
+    .pool-hero-name { font-size:5.5rem; font-weight:400; letter-spacing:1px; line-height:1; color:#ffffff; text-transform:uppercase; font-family:'Rubik Mono One',monospace; position:relative; z-index:2; text-align:center; }
     .pool-hero-meta { font-size:1rem; color:rgba(255,255,255,0.38); margin-top:12px; font-weight:400; position:relative; z-index:2; text-align:center; letter-spacing:0.2px; }
     .hero-logo { position:absolute; border-radius:18px; display:flex; align-items:center; justify-content:center; overflow:hidden; z-index:1; }
     .hero-logo svg { width:56px; height:56px; }
@@ -264,8 +266,7 @@
     }
 
     @media(max-width:700px) {
-      .pool-grid { grid-template-columns: 1fr; }
-      .grid-2 { grid-template-columns: 1fr; }
+.grid-2 { grid-template-columns: 1fr; }
       .page { padding: 20px 14px 110px; }
       .login-box { padding: 32px 24px; }
       .hero-score { font-size: 2.2rem; }
@@ -292,8 +293,8 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 //   ALTER TABLE pool_config ADD COLUMN pool_id text DEFAULT 'plat_family';
 //   ALTER TABLE pool_config ADD CONSTRAINT pool_config_pool_id_key UNIQUE (pool_id);
 const POOLS = [
-  { id:'plat_family', name:'Plat Family',  password:'stevenisthebest', icon:'👨‍👩‍👧', color:'#7c5cfc', grad:'linear-gradient(135deg,#7c5cfc,#3b82f6)' },
-  { id:'the_boys',    name:'The Boys',      password:'boobs',           icon:'🍺',     color:'#f59e0b', grad:'linear-gradient(135deg,#f59e0b,#ef4444)' },
+  { id:'plat_family', name:'Plat Family',  password:'stevenisthebest', icon:'👨‍👩‍👧', color:'#f97316', grad:'linear-gradient(135deg,#f97316,#ea580c)', logo:'Assets/Login-Logo_ThePlatFamily.png', bg:'#111111' },
+  { id:'the_boys',    name:'The Boys',      password:'boobs',           icon:'🍺',     color:'#3b82f6', grad:'linear-gradient(135deg,#3b82f6,#1d4ed8)', logo:'Assets/Login-Logo_TheBoys.png',       bg:'#060606' },
 ];
 
 // ── CONSTANTS ──
@@ -375,12 +376,24 @@ async function dbDeleteUser(id) {
   await sb.from('pool_users').delete().eq('id', id);
 }
 
-// ── NHL API (free, no key required) ──
+// ── NHL API ──
+// The NHL API restricts CORS to https://www.nhl.com, so browser fetches from
+// other origins (e.g. GitHub Pages) are blocked. We try direct first (works
+// locally), then fall back to a CORS proxy for production.
 const NHL_API = 'https://api-web.nhle.com/v1';
+const CORS_PROXY = 'https://corsproxy.io/?';
 
 async function nhlFetchPlayoff(season) {
-  const res = await fetch(`${NHL_API}/playoff-bracket/${season}`);
-  if (!res.ok) throw new Error(`NHL API ${res.status}`);
+  const url = `${NHL_API}/playoff-bracket/${season}`;
+  let res;
+  try {
+    res = await fetch(url);
+    if (!res.ok) throw new Error(`NHL API ${res.status}`);
+  } catch(e) {
+    // Direct fetch blocked (CORS) — retry via proxy
+    res = await fetch(`${CORS_PROXY}${encodeURIComponent(url)}`);
+    if (!res.ok) throw new Error(`NHL API ${res.status}`);
+  }
   const data = await res.json();
   if (!data.series?.length) throw new Error('No playoff data for this season yet.');
   return data;
@@ -645,48 +658,33 @@ function PoolSelectPage({onLogin}) {
   }
 
   return(
-    <div className="login-wrap">
-      <div className="login-blob login-blob-1"/><div className="login-blob login-blob-2"/><div className="login-blob login-blob-3"/>
+    <div className="login-split">
       <div className="login-grain"/>
-      <div style={{position:'relative',zIndex:2,width:'100%',display:'flex',flexDirection:'column',alignItems:'center',padding:'0 20px'}}>
-        <div style={{textAlign:'center',marginBottom:40}}>
-          <div style={{fontSize:'2.8rem',marginBottom:12}}>🏒</div>
-          <h1 style={{fontSize:'2rem',fontWeight:800,letterSpacing:'-1px',background:'linear-gradient(135deg,#fff,rgba(255,255,255,.7))',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>NHL Playoff Pool</h1>
-          <p style={{color:'var(--text2)',marginTop:8,fontSize:'0.95rem'}}>Pick the champ. Crush the competition.</p>
+      {POOLS.map(pool=>(
+        <div key={pool.id} className="login-half" style={{background:pool.bg}}>
+          <img src={pool.logo} alt={pool.name} className="login-half-logo"/>
+          <form className="login-half-form" onSubmit={e=>attempt(pool,e)}>
+            <input
+              className="login-half-input"
+              type="password"
+              placeholder="Password"
+              value={pws[pool.id]}
+              onChange={e=>{setPws(p=>({...p,[pool.id]:e.target.value}));setErrs(p=>({...p,[pool.id]:''}));}}
+              autoComplete="off"
+            />
+            <div className="login-half-err">{errs[pool.id]||''}</div>
+            <button type="submit" className="login-half-btn" style={{background:pool.grad}} disabled={entering===pool.id}>
+              {entering===pool.id?'Entering…':'Play'}
+            </button>
+          </form>
         </div>
-        <div className="pool-grid">
-          {POOLS.map(pool=>(
-            <div key={pool.id} className="pool-card" style={{'--pool-accent':pool.color}}>
-              <div className="pool-card-header">
-                <div className="pool-card-icon">{pool.icon}</div>
-                <div className="pool-card-name">{pool.name}</div>
-              </div>
-              {errs[pool.id]&&<Alert type="danger">{errs[pool.id]}</Alert>}
-              <form onSubmit={e=>attempt(pool,e)}>
-                <div className="form-group" style={{marginBottom:14}}>
-                  <input
-                    className="form-input"
-                    type="password"
-                    placeholder="Password"
-                    value={pws[pool.id]}
-                    onChange={e=>{setPws(p=>({...p,[pool.id]:e.target.value}));setErrs(p=>({...p,[pool.id]:''}));}}
-                    autoComplete="off"
-                  />
-                </div>
-                <button type="submit" className="btn btn-full" style={{background:pool.grad,color:'#fff',borderRadius:12,justifyContent:'center'}} disabled={entering===pool.id}>
-                  {entering===pool.id?'Entering…':'Enter Pool'}
-                </button>
-              </form>
-            </div>
-          ))}
-        </div>
-      </div>
+      ))}
     </div>
   );
 }
 
 // ── PROFILE SELECT ──
-function ProfileSelectPage({users, onSelect, onSignOut, onAdd}) {
+function ProfileSelectPage({users, pool, onSelect, onSignOut, onAdd}) {
   const FALLBACK_COLORS = ['#7c5cfc','#f5a623','#22c55e','#f43f5e','#3b82f6','#ec4899','#14b8a6','#f97316','#8b5cf6','#06b6d4'];
   function fallbackColor(name) { let h=0; for(const c of name) h=(h*31+c.charCodeAt(0))&0x7fffffff; return FALLBACK_COLORS[h%FALLBACK_COLORS.length]; }
   function initials(name) { return name.trim().split(/\s+/).map(w=>w[0]?.toUpperCase()||'').slice(0,2).join('')||'?'; }
@@ -721,8 +719,8 @@ function ProfileSelectPage({users, onSelect, onSignOut, onAdd}) {
       <div className="login-blob login-blob-1"/><div className="login-blob login-blob-2"/><div className="login-blob login-blob-3"/>
       <div className="login-grain"/>
       <div className="profile-header">
-        <div style={{fontSize:'2.5rem',marginBottom:14}}>🏒</div>
-        <h1>NHL Playoff Pool</h1>
+        {pool?.logo&&<img src={pool.logo} alt={pool.name} style={{width:160,marginBottom:16}}/>}
+        <h1>{pool?.name||'NHL Playoff Pool'}</h1>
         <p>Who's playing today?</p>
       </div>
       <div className="profile-grid">
@@ -891,7 +889,7 @@ function PoolHero({user,myEntry,scored,bracket,onGoToPicks}){
   return(
     <div className="pool-hero">
       {logos.map((l,i)=>(
-        <div key={i} className={`hero-logo hero-logo-${i+1}`} style={{background:l.bg,boxShadow:`0 0 32px 10px ${l.glow.replace(/[\d.]+\)$/,a=>+(+a.slice(0,-1)/2).toFixed(2)+')')}, 0 0 80px 30px ${l.glowFar.replace(/[\d.]+\)$/,a=>+(+a.slice(0,-1)/2).toFixed(2)+')')}`}}>
+        <div key={i} className={`hero-logo hero-logo-${i+1}`} style={{background:l.glow.replace(/[\d.]+\)$/,'1)'),boxShadow:`0 0 32px 10px ${l.glow.replace(/[\d.]+\)$/,a=>+(+a.slice(0,-1)/2).toFixed(2)+')')}, 0 0 80px 30px ${l.glowFar.replace(/[\d.]+\)$/,a=>+(+a.slice(0,-1)/2).toFixed(2)+')')}`}}>
           <img src={l.src} style={{width:56,height:56,objectFit:'contain'}}/>
         </div>
       ))}
@@ -1553,6 +1551,24 @@ function BracketSetupPage({data,onRefresh}){
   const [bracket,setBracket]=useState(data.bracket);const [msg,setMsg]=useState('');const [msgType,setMsgType]=useState('success');
   const [saving,setSaving]=useState(false);const [importing,setImporting]=useState(false);
   useEffect(()=>{setBracket(data.bracket);},[data.bracket]);
+  // Auto-import teams from NHL when bracket is empty
+  useEffect(()=>{
+    if(data.bracket.round1.some(s=>s.team1||s.team2))return; // already has teams
+    async function autoImport(){
+      try{
+        const nhl=await nhlFetchPlayoff(data.bracket.season);
+        const round1=nhlParseTeams(nhl.series);
+        if(round1.some(s=>s.team1||s.team2)){
+          setBracket(p=>({...p,round1}));
+          await dbSaveConfig({...data.bracket,round1},data.poolId);
+          await onRefresh();
+          setMsg('Teams auto-imported from NHL.com.');setMsgType('success');
+          setTimeout(()=>setMsg(''),4000);
+        }
+      }catch(e){ /* silent */ }
+    }
+    autoImport();
+  },[]);
   function setTeam(idx,field,val){setBracket(p=>{const r1=[...p.round1];r1[idx]={...r1[idx],[field]:val};return{...p,round1:r1};});}
   async function handleSave(){
     setSaving(true);
@@ -1623,6 +1639,26 @@ function ResultsPage({data,onRefresh}){
   const [saving,setSaving]=useState(false);const [syncing,setSyncing]=useState(false);
   const {bracket}=data;
   useEffect(()=>{setResults(data.bracket.results);},[data.bracket.results]);
+  // Auto-sync from NHL on mount — fills in any newly completed series and saves
+  useEffect(()=>{
+    async function autoSync(){
+      try{
+        const nhl=await nhlFetchPlayoff(bracket.season);
+        const synced=nhlParseResults(nhl.series);
+        const newlyDone=Object.entries(synced).some(([k,arr])=>arr.some((s,i)=>s&&!data.bracket.results[k]?.[i]));
+        if(newlyDone){
+          const merged=Object.fromEntries(['r1','r2','r3','r4'].map(k=>[k,(synced[k]||[]).map((s,i)=>s||data.bracket.results[k]?.[i]||null)]));
+          setResults(merged);
+          await dbSaveConfig({...bracket,results:merged},data.poolId);
+          await onRefresh();
+          const count=Object.values(merged).flat().filter(Boolean).length;
+          setMsg(`Auto-synced ${count} completed series from NHL.com.`);setMsgType('success');
+          setTimeout(()=>setMsg(''),5000);
+        }
+      }catch(e){ /* silent — manual sync still available */ }
+    }
+    autoSync();
+  },[]);
   function setResult(round,idx,field,val){setResults(p=>{const n={...p,[round]:[...p[round]]};n[round][idx]={...(n[round][idx]||{}),[field]:field==='length'?parseInt(val)||null:val};return n;});}
   async function handleSave(){
     setSaving(true);
@@ -1637,7 +1673,7 @@ function ResultsPage({data,onRefresh}){
       const synced=nhlParseResults(nhl.series);
       const completed=Object.values(synced).flat().filter(Boolean).length;
       if(completed===0){setMsg('No completed series found yet — check back once the playoffs start.');setMsgType('warn');}
-      else{setResults(synced);setMsg(`Synced ${completed} completed series from NHL. Review and save.`);setMsgType('success');}
+      else{setResults(synced);await dbSaveConfig({...bracket,results:synced},data.poolId);await onRefresh();setMsg(`Synced ${completed} completed series from NHL.com. Scores updated.`);setMsgType('success');}
     }catch(e){setMsg(`NHL sync failed: ${e.message}`);setMsgType('danger');}
     finally{setSyncing(false);setTimeout(()=>setMsg(''),6000);}
   }
@@ -1656,7 +1692,7 @@ function ResultsPage({data,onRefresh}){
         </button>
       </div>
       {msg&&<Alert type={msgType}>{msg}</Alert>}
-      <Alert type="info">Use <strong>Sync from NHL</strong> to auto-fill completed series, or enter results manually below. Save when done to update everyone's scores.</Alert>
+      <Alert type="info">Results auto-sync from NHL.com when this page loads. Use <strong>Sync from NHL</strong> to force a refresh, or enter results manually below.</Alert>
       <div className="grid-2"><div className="card"><div className="card-title">Round 1 — East</div>{[0,1,2,3].map(i=><ResultRow key={i} round="r1" idx={i} label={`East Series ${i+1}`} team1={bracket.round1[i].team1} team2={bracket.round1[i].team2}/>)}</div><div className="card"><div className="card-title">Round 1 — West</div>{[4,5,6,7].map((i,n)=><ResultRow key={i} round="r1" idx={i} label={`West Series ${n+1}`} team1={bracket.round1[i].team1} team2={bracket.round1[i].team2}/>)}</div></div>
       <div className="grid-2"><div className="card"><div className="card-title">Round 2 — East</div>{[0,1].map(i=><ResultRow key={i} round="r2" idx={i} label={ar2[i].label} team1={ar2[i].team1} team2={ar2[i].team2}/>)}</div><div className="card"><div className="card-title">Round 2 — West</div>{[2,3].map(i=><ResultRow key={i} round="r2" idx={i} label={ar2[i].label} team1={ar2[i].team1} team2={ar2[i].team2}/>)}</div></div>
       <div className="grid-2"><div className="card"><div className="card-title">Conference Finals</div>{[0,1].map(i=><ResultRow key={i} round="r3" idx={i} label={ar3[i].label} team1={ar3[i].team1} team2={ar3[i].team2}/>)}</div><div className="card"><div className="card-title">Stanley Cup Final</div><ResultRow round="r4" idx={0} label={ar4[0].label} team1={ar4[0].team1} team2={ar4[0].team2}/></div></div>
@@ -1735,7 +1771,7 @@ function App(){
   if(appState==='unconfigured') return <NotConfigured/>;
   if(!currentPool) return <PoolSelectPage onLogin={handleLogin}/>;
   if(!data) return <Spinner message="Loading pool…"/>;
-  if(!currentUser) return <ProfileSelectPage users={data.users||[]} onSelect={handleProfileSelect} onSignOut={handleSignOut} onAdd={handleAddProfile}/>;
+  if(!currentUser) return <ProfileSelectPage users={data.users||[]} pool={currentPool} onSelect={handleProfileSelect} onSignOut={handleSignOut} onAdd={handleAddProfile}/>;
 
   const liveUser = data?.users?.find(u=>u.id===currentUser.id) || currentUser;
   const needsPicks = !liveUser.picks && data?.bracket?.status === 'open';
