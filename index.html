@@ -694,6 +694,19 @@ function ProfileSelectPage({users, pool, onSelect, onSignOut, onAdd}) {
   const [selAvatar,setSelAvatar]=useState(0);
   const [saving,setSaving]=useState(false);
   const [err,setErr]=useState('');
+  const [adminPrompt,setAdminPrompt]=useState(null); // user being authenticated
+  const [adminPw,setAdminPw]=useState('');
+  const [adminErr,setAdminErr]=useState('');
+
+  function handleProfileClick(u){
+    if(u.is_admin){ setAdminPrompt(u); setAdminPw(''); setAdminErr(''); }
+    else onSelect(u);
+  }
+  function handleAdminSubmit(e){
+    e.preventDefault();
+    if(adminPw===adminPrompt.password){ onSelect(adminPrompt); }
+    else{ setAdminErr('Incorrect password.'); setAdminPw(''); }
+  }
 
   function openAdd(){ setNewName(''); setSelAvatar(0); setErr(''); setShowAdd(true); }
 
@@ -727,7 +740,7 @@ function ProfileSelectPage({users, pool, onSelect, onSignOut, onAdd}) {
         {users.map(u=>{
           const hasAvatar = u.avatar != null;
           return(
-            <div key={u.id} className="profile-card" onClick={()=>onSelect(u)}>
+            <div key={u.id} className="profile-card" onClick={()=>handleProfileClick(u)}>
               <div className="profile-avatar" style={{background: hasAvatar ? AVATAR_LIST[u.avatar]?.bg : fallbackColor(u.username), overflow:'hidden', fontSize: hasAvatar ? 0 : '1.5rem'}}>
                 {hasAvatar ? <AvatarSvg id={u.avatar}/> : initials(u.username)}
               </div>
@@ -743,6 +756,24 @@ function ProfileSelectPage({users, pool, onSelect, onSignOut, onAdd}) {
       </div>
       <button className="profile-exit" onClick={onSignOut}>Sign out of pool</button>
 
+      {adminPrompt&&(
+        <div className="modal-bg" onClick={e=>e.target===e.currentTarget&&setAdminPrompt(null)}>
+          <div className="modal" style={{maxWidth:360}}>
+            <div className="modal-title">🔒 Admin Access</div>
+            <p style={{fontSize:'0.85rem',color:'var(--text2)',marginBottom:20}}>Enter the password for <strong>{adminPrompt.username}</strong>.</p>
+            {adminErr&&<Alert type="danger">{adminErr}</Alert>}
+            <form onSubmit={handleAdminSubmit}>
+              <div className="form-group">
+                <input className="form-input" type="password" placeholder="Password" value={adminPw} onChange={e=>setAdminPw(e.target.value)} autoFocus/>
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="btn btn-ghost" onClick={()=>setAdminPrompt(null)}>Cancel</button>
+                <button type="submit" className="btn btn-primary">Enter</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       {showAdd&&(
         <div className="modal-bg" onClick={e=>e.target===e.currentTarget&&setShowAdd(false)}>
           <div className="modal" style={{maxWidth:460}}>
@@ -935,9 +966,6 @@ function PoolView({user,data,onRefresh,onGoToPicks}){
         </div>
       </div>
 
-      <div className="flex gap-2 mb-3 flex-wrap">
-        <div className="stat-pill"><div className="stat-value"><span className={`badge badge-${st.type}`}>{st.label}</span></div><div className="stat-label">Status</div></div>
-      </div>
 
       <div className="card mb-3">
         <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
@@ -1669,6 +1697,14 @@ function ResultsPage({data,onRefresh}){
     catch(e){setMsg('Save failed: '+e.message);setMsgType('danger');}
     finally{setSaving(false);setTimeout(()=>setMsg(''),3000);}
   }
+  async function handleReset(){
+    if(!confirm('Reset all results to blank? This cannot be undone.'))return;
+    const blank=DEFAULT_RESULTS;
+    setResults(blank);
+    try{await dbSaveConfig({...bracket,results:blank},data.poolId);await onRefresh();setMsg('Results cleared.');setMsgType('success');}
+    catch(e){setMsg('Reset failed: '+e.message);setMsgType('danger');}
+    finally{setTimeout(()=>setMsg(''),3000);}
+  }
   async function handleSyncNHL(){
     setSyncing(true);setMsg('');
     try{
@@ -1690,9 +1726,12 @@ function ResultsPage({data,onRefresh}){
     <div className="page">
       <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
         <div className="page-title" style={{marginBottom:0}}>📊 Results</div>
-        <button className="btn btn-ghost btn-sm" onClick={handleSyncNHL} disabled={syncing} style={{borderColor:'rgba(255,255,255,0.15)'}}>
-          {syncing?'Syncing…':'⟳ Sync from NHL'}
-        </button>
+        <div style={{display:'flex',gap:8}}>
+          <button className="btn btn-ghost btn-sm" onClick={handleSyncNHL} disabled={syncing} style={{borderColor:'rgba(255,255,255,0.15)'}}>
+            {syncing?'Syncing…':'⟳ Sync from NHL'}
+          </button>
+          <button className="btn btn-danger btn-sm" onClick={handleReset}>Reset Results</button>
+        </div>
       </div>
       {msg&&<Alert type={msgType}>{msg}</Alert>}
       <Alert type="info">Results auto-sync from NHL.com when this page loads. Use <strong>Sync from NHL</strong> to force a refresh, or enter results manually below.</Alert>
