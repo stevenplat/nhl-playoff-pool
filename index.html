@@ -243,7 +243,7 @@
     @keyframes heroFloat3 { 0%,100%{transform:rotate(-8deg)} 50%{transform:translateY(-14px) rotate(-5deg)} }
     @keyframes heroFloat4 { 0%,100%{transform:translateY(-50%) rotate(14deg)} 50%{transform:translateY(calc(-50% - 9px)) rotate(11deg)} }
     .pool-hero { position:relative; width:100%; overflow:hidden; background:transparent; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:64px 24px 56px; min-height:260px; }
-    .pool-hero-name { font-size:5.5rem; font-weight:400; letter-spacing:1px; line-height:1; color:#b5ccdb; text-transform:uppercase; font-family:'Faster One',cursive; position:relative; z-index:2; text-align:center; }
+    .pool-hero-name { font-size:5.5rem; font-weight:400; letter-spacing:1px; line-height:1; color:#ffffff; text-transform:uppercase; font-family:'Faster One',cursive; position:relative; z-index:2; text-align:center; }
     .pool-hero-meta { font-size:1rem; color:rgba(255,255,255,0.38); margin-top:12px; font-weight:400; position:relative; z-index:2; text-align:center; letter-spacing:0.2px; }
     .hero-logo { position:absolute; border-radius:18px; display:flex; align-items:center; justify-content:center; overflow:hidden; z-index:1; }
     .hero-logo svg { width:56px; height:56px; }
@@ -1553,6 +1553,24 @@ function BracketSetupPage({data,onRefresh}){
   const [bracket,setBracket]=useState(data.bracket);const [msg,setMsg]=useState('');const [msgType,setMsgType]=useState('success');
   const [saving,setSaving]=useState(false);const [importing,setImporting]=useState(false);
   useEffect(()=>{setBracket(data.bracket);},[data.bracket]);
+  // Auto-import teams from NHL when bracket is empty
+  useEffect(()=>{
+    if(data.bracket.round1.some(s=>s.team1||s.team2))return; // already has teams
+    async function autoImport(){
+      try{
+        const nhl=await nhlFetchPlayoff(data.bracket.season);
+        const round1=nhlParseTeams(nhl.series);
+        if(round1.some(s=>s.team1||s.team2)){
+          setBracket(p=>({...p,round1}));
+          await dbSaveConfig({...data.bracket,round1},data.poolId);
+          await onRefresh();
+          setMsg('Teams auto-imported from NHL.com.');setMsgType('success');
+          setTimeout(()=>setMsg(''),4000);
+        }
+      }catch(e){ /* silent */ }
+    }
+    autoImport();
+  },[]);
   function setTeam(idx,field,val){setBracket(p=>{const r1=[...p.round1];r1[idx]={...r1[idx],[field]:val};return{...p,round1:r1};});}
   async function handleSave(){
     setSaving(true);
@@ -1623,6 +1641,26 @@ function ResultsPage({data,onRefresh}){
   const [saving,setSaving]=useState(false);const [syncing,setSyncing]=useState(false);
   const {bracket}=data;
   useEffect(()=>{setResults(data.bracket.results);},[data.bracket.results]);
+  // Auto-sync from NHL on mount — fills in any newly completed series and saves
+  useEffect(()=>{
+    async function autoSync(){
+      try{
+        const nhl=await nhlFetchPlayoff(bracket.season);
+        const synced=nhlParseResults(nhl.series);
+        const newlyDone=Object.entries(synced).some(([k,arr])=>arr.some((s,i)=>s&&!data.bracket.results[k]?.[i]));
+        if(newlyDone){
+          const merged=Object.fromEntries(['r1','r2','r3','r4'].map(k=>[k,(synced[k]||[]).map((s,i)=>s||data.bracket.results[k]?.[i]||null)]));
+          setResults(merged);
+          await dbSaveConfig({...bracket,results:merged},data.poolId);
+          await onRefresh();
+          const count=Object.values(merged).flat().filter(Boolean).length;
+          setMsg(`Auto-synced ${count} completed series from NHL.com.`);setMsgType('success');
+          setTimeout(()=>setMsg(''),5000);
+        }
+      }catch(e){ /* silent — manual sync still available */ }
+    }
+    autoSync();
+  },[]);
   function setResult(round,idx,field,val){setResults(p=>{const n={...p,[round]:[...p[round]]};n[round][idx]={...(n[round][idx]||{}),[field]:field==='length'?parseInt(val)||null:val};return n;});}
   async function handleSave(){
     setSaving(true);
@@ -1637,7 +1675,7 @@ function ResultsPage({data,onRefresh}){
       const synced=nhlParseResults(nhl.series);
       const completed=Object.values(synced).flat().filter(Boolean).length;
       if(completed===0){setMsg('No completed series found yet — check back once the playoffs start.');setMsgType('warn');}
-      else{setResults(synced);setMsg(`Synced ${completed} completed series from NHL. Review and save.`);setMsgType('success');}
+      else{setResults(synced);await dbSaveConfig({...bracket,results:synced},data.poolId);await onRefresh();setMsg(`Synced ${completed} completed series from NHL.com. Scores updated.`);setMsgType('success');}
     }catch(e){setMsg(`NHL sync failed: ${e.message}`);setMsgType('danger');}
     finally{setSyncing(false);setTimeout(()=>setMsg(''),6000);}
   }
@@ -1656,7 +1694,7 @@ function ResultsPage({data,onRefresh}){
         </button>
       </div>
       {msg&&<Alert type={msgType}>{msg}</Alert>}
-      <Alert type="info">Use <strong>Sync from NHL</strong> to auto-fill completed series, or enter results manually below. Save when done to update everyone's scores.</Alert>
+      <Alert type="info">Results auto-sync from NHL.com when this page loads. Use <strong>Sync from NHL</strong> to force a refresh, or enter results manually below.</Alert>
       <div className="grid-2"><div className="card"><div className="card-title">Round 1 — East</div>{[0,1,2,3].map(i=><ResultRow key={i} round="r1" idx={i} label={`East Series ${i+1}`} team1={bracket.round1[i].team1} team2={bracket.round1[i].team2}/>)}</div><div className="card"><div className="card-title">Round 1 — West</div>{[4,5,6,7].map((i,n)=><ResultRow key={i} round="r1" idx={i} label={`West Series ${n+1}`} team1={bracket.round1[i].team1} team2={bracket.round1[i].team2}/>)}</div></div>
       <div className="grid-2"><div className="card"><div className="card-title">Round 2 — East</div>{[0,1].map(i=><ResultRow key={i} round="r2" idx={i} label={ar2[i].label} team1={ar2[i].team1} team2={ar2[i].team2}/>)}</div><div className="card"><div className="card-title">Round 2 — West</div>{[2,3].map(i=><ResultRow key={i} round="r2" idx={i} label={ar2[i].label} team1={ar2[i].team1} team2={ar2[i].team2}/>)}</div></div>
       <div className="grid-2"><div className="card"><div className="card-title">Conference Finals</div>{[0,1].map(i=><ResultRow key={i} round="r3" idx={i} label={ar3[i].label} team1={ar3[i].team1} team2={ar3[i].team2}/>)}</div><div className="card"><div className="card-title">Stanley Cup Final</div><ResultRow round="r4" idx={0} label={ar4[0].label} team1={ar4[0].team1} team2={ar4[0].team2}/></div></div>
