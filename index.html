@@ -35,27 +35,27 @@
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'IBM Plex Sans', 'Inter', system-ui, sans-serif; background: radial-gradient(ellipse 120% 500px at 50% 280px, rgba(0,60,75,0.4) 0%, transparent 100%) fixed, var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+    body { font-family: 'IBM Plex Sans', 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
     ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-track { background: var(--bg); }
     ::-webkit-scrollbar-thumb { background: var(--bg5); border-radius: 2px; }
 
     /* ── NAV ── */
     /* Profile submenu */
-    .profile-submenu { position: fixed; bottom: 106px; left: 50%; transform: translateX(-50%); background: var(--bg2); backdrop-filter: blur(20px); border: 1px solid var(--border2); border-radius: 8px; padding: 4px; min-width: 200px; z-index: 300; box-shadow: 0 16px 48px rgba(0,0,0,0.6); }
+    .profile-submenu { position: fixed; top: 70px; right: 16px; background: var(--bg2); backdrop-filter: blur(20px); border: 1px solid var(--border2); border-radius: 8px; padding: 4px; min-width: 200px; z-index: 300; box-shadow: 0 16px 48px rgba(0,0,0,0.6); }
     .profile-submenu-btn { display: flex; align-items: center; gap: 10px; width: 100%; background: none; border: none; color: var(--text2); padding: 9px 12px; border-radius: 5px; cursor: pointer; font-size: 0.83rem; font-weight: 500; font-family: inherit; transition: all .12s; text-align: left; }
     .profile-submenu-btn:hover { background: var(--bg3); color: var(--text); }
     .profile-submenu-btn.danger:hover { background: rgba(248,113,113,0.08); color: var(--red); }
     .submenu-overlay { position: fixed; inset: 0; z-index: 200; }
     /* Tab bar */
-    .bottom-tab-bar { display: flex; position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.07); backdrop-filter: blur(40px) saturate(180%); -webkit-backdrop-filter: blur(40px) saturate(180%); border: 1px solid rgba(255,255,255,0.13); border-radius: 30px; padding: 5px; gap: 2px; z-index: 90; box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.06) inset, 0 -1px 0 rgba(0,0,0,0.3) inset; }
+    .bottom-tab-bar { display: flex; position: fixed; top: 0; left: 0; right: 0; background: rgba(13,13,13,0.85); backdrop-filter: blur(40px) saturate(180%); -webkit-backdrop-filter: blur(40px) saturate(180%); border-bottom: 1px solid rgba(255,255,255,0.08); padding: 6px 12px; gap: 2px; z-index: 90; justify-content: center; }
     .tab-item { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 13px; border-radius: 25px; cursor: pointer; transition: all 0.2s ease; border: none; background: none; color: rgba(255,255,255,0.4); font-size: 0.6rem; font-weight: 600; font-family: inherit; white-space: nowrap; letter-spacing: 0.3px; text-transform: uppercase; min-width: 54px; }
     .tab-item.active { background: rgba(255,255,255,0.13); color: #fff; box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset, 0 2px 12px rgba(0,0,0,0.25); }
     .tab-icon { font-size: 1.25rem; line-height: 1; position: relative; }
     .tab-dot { position: absolute; top: -2px; right: -4px; width: 6px; height: 6px; border-radius: 50%; background: var(--gold); border: 1.5px solid #0d0d0d; }
 
     /* ── PAGE ── */
-    .page { max-width: 1040px; margin: 0 auto; padding: 40px 28px 110px; }
+    .page { max-width: 1040px; margin: 0 auto; padding: 80px 28px 40px; }
     .page-title { font-size: 1.35rem; font-weight: 600; margin-bottom: 28px; letter-spacing: -0.2px; color: var(--text); }
 
     /* ── HERO ── */
@@ -244,7 +244,7 @@
     @keyframes heroFloat2 { 0%,100%{transform:rotate(10deg)} 50%{transform:translateY(-12px) rotate(7deg)} }
     @keyframes heroFloat3 { 0%,100%{transform:rotate(-8deg)} 50%{transform:translateY(-14px) rotate(-5deg)} }
     @keyframes heroFloat4 { 0%,100%{transform:translateY(-50%) rotate(14deg)} 50%{transform:translateY(calc(-50% - 9px)) rotate(11deg)} }
-    .pool-hero { position:relative; width:100%; overflow:hidden; background:transparent; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:64px 24px 56px; min-height:260px; }
+    .pool-hero { position:relative; width:100%; overflow:hidden; background:transparent; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:64px 24px 56px; min-height:260px; margin-top:60px; }
     .pool-hero-name { font-size:5.5rem; font-weight:400; letter-spacing:1px; line-height:1; color:#ffffff; text-transform:uppercase; font-family:'Rubik Mono One',monospace; position:relative; z-index:2; text-align:center; }
     .pool-hero-meta { font-size:1rem; color:rgba(255,255,255,0.38); margin-top:12px; font-weight:400; position:relative; z-index:2; text-align:center; letter-spacing:0.2px; }
     .hero-logo { position:absolute; border-radius:18px; display:flex; align-items:center; justify-content:center; overflow:hidden; z-index:1; }
@@ -256,7 +256,7 @@
 
     @media(max-width:700px) {
       .pool-hero-name { font-size:3.2rem; letter-spacing:1px; }
-      .pool-hero { min-height:200px; padding:48px 16px 40px; }
+      .pool-hero { min-height:200px; padding:48px 16px 40px; margin-top:56px; }
       .hero-logo { border-radius:14px; }
       .hero-logo svg { width:40px; height:40px; }
       .hero-logo-1 { width:58px; height:58px; left:2%; }
@@ -267,7 +267,7 @@
 
     @media(max-width:700px) {
 .grid-2 { grid-template-columns: 1fr; }
-      .page { padding: 20px 14px 110px; }
+      .page { padding: 70px 14px 24px; }
       .login-box { padding: 32px 24px; }
       .hero-score { font-size: 2.2rem; }
     }
@@ -293,8 +293,8 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 //   ALTER TABLE pool_config ADD COLUMN pool_id text DEFAULT 'plat_family';
 //   ALTER TABLE pool_config ADD CONSTRAINT pool_config_pool_id_key UNIQUE (pool_id);
 const POOLS = [
-  { id:'plat_family', name:'Plat Family',  password:'stevenisthebest', icon:'👨‍👩‍👧', color:'#f97316', grad:'linear-gradient(135deg,#f97316,#ea580c)', logo:'Assets/Login-Logo_ThePlatFamily.png', bg:'#111111' },
-  { id:'the_boys',    name:'The Boys',      password:'boobs',           icon:'🍺',     color:'#3b82f6', grad:'linear-gradient(135deg,#3b82f6,#1d4ed8)', logo:'Assets/Login-Logo_TheBoys.png',       bg:'#060606' },
+  { id:'plat_family', name:'Plat Family', password:'platters', color:'#f97316', grad:'linear-gradient(135deg,#f97316,#ea580c)', logo:'Assets/Login-Logo_ThePlatFamily.png', bg:'#111111' },
+  { id:'the_boys',    name:'The Boys', password:'boobs', color:'#3b82f6', grad:'linear-gradient(135deg,#3b82f6,#1d4ed8)', logo:'Assets/Login-Logo_TheBoys.png', bg:'#060606' },
 ];
 
 // ── CONSTANTS ──
@@ -1188,7 +1188,7 @@ function MyPicksPage({user,data,onSavePicks}){
     };
 
     return(
-      <div style={{padding:'28px 0 110px'}}>
+      <div style={{padding:'28px 0 40px'}}>
         {/* Header */}
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20,padding:'0 20px'}}>
           <div className="page-title" style={{marginBottom:0}}>Your Picks</div>
@@ -1313,7 +1313,7 @@ function MyPicksPage({user,data,onSavePicks}){
   if(isLastStep){
     const goldAccent='245,166,35';
     return(
-      <div style={{minHeight:'calc(100vh - 90px)',display:'flex',flexDirection:'column',alignItems:'center',paddingBottom:110}}>
+      <div style={{minHeight:'calc(100vh - 90px)',display:'flex',flexDirection:'column',alignItems:'center',paddingBottom:40}}>
         {/* Gold hero */}
         <div style={{width:'100%',background:'linear-gradient(180deg,rgba(245,166,35,0.18) 0%,transparent 100%)',display:'flex',flexDirection:'column',alignItems:'center',padding:'56px 24px 40px',textAlign:'center',borderBottom:'1px solid rgba(245,166,35,0.12)'}}>
           <div style={{fontSize:'5rem',lineHeight:1,marginBottom:20,filter:'drop-shadow(0 0 32px rgba(245,166,35,0.5))'}}>🏆</div>
