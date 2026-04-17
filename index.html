@@ -375,12 +375,24 @@ async function dbDeleteUser(id) {
   await sb.from('pool_users').delete().eq('id', id);
 }
 
-// ── NHL API (free, no key required) ──
+// ── NHL API ──
+// The NHL API restricts CORS to https://www.nhl.com, so browser fetches from
+// other origins (e.g. GitHub Pages) are blocked. We try direct first (works
+// locally), then fall back to a CORS proxy for production.
 const NHL_API = 'https://api-web.nhle.com/v1';
+const CORS_PROXY = 'https://corsproxy.io/?';
 
 async function nhlFetchPlayoff(season) {
-  const res = await fetch(`${NHL_API}/playoff-bracket/${season}`);
-  if (!res.ok) throw new Error(`NHL API ${res.status}`);
+  const url = `${NHL_API}/playoff-bracket/${season}`;
+  let res;
+  try {
+    res = await fetch(url);
+    if (!res.ok) throw new Error(`NHL API ${res.status}`);
+  } catch(e) {
+    // Direct fetch blocked (CORS) — retry via proxy
+    res = await fetch(`${CORS_PROXY}${encodeURIComponent(url)}`);
+    if (!res.ok) throw new Error(`NHL API ${res.status}`);
+  }
   const data = await res.json();
   if (!data.series?.length) throw new Error('No playoff data for this season yet.');
   return data;
