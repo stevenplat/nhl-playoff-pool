@@ -933,13 +933,114 @@ function PoolHero({user,myEntry,scored,bracket,onGoToPicks}){
   );
 }
 
+// ── LIVE BRACKET ──
+function LiveBracket({season}){
+  const [series,setSeries]=useState(null);
+  useEffect(()=>{
+    const KEY=`nhl_live_${season}`;
+    try{const c=JSON.parse(localStorage.getItem(KEY)||'null');if(c&&Date.now()-c.ts<24*60*60*1000){setSeries(c.d);return;}}catch(e){}
+    nhlFetchPlayoff(season).then(d=>{
+      localStorage.setItem(KEY,JSON.stringify({d:d.series,ts:Date.now()}));
+      setSeries(d.series);
+    }).catch(()=>{});
+  },[season]);
+
+  if(!series?.length)return null;
+
+  const byRound=r=>series.filter(s=>s.playoffRound===r).sort((a,b)=>a.seriesLetter.localeCompare(b.seriesLetter));
+  const r1=byRound(1),r2=byRound(2),r3=byRound(3),r4=byRound(4);
+  const eastR1=r1.slice(0,4),westR1=r1.slice(4,8);
+  const eastR2=r2.slice(0,2),westR2=r2.slice(2,4);
+  const eastCF=r3[0]||null,westCF=r3[1]||null,cupFinal=r4[0]||null;
+
+  const CW=156,CH=72,WG=8,PG=16,RG=12,CupW=172;
+  const PH=CH*2+WG;
+  const TH=PH*2+PG;
+  const r1y=i=>i<2?i*(CH+WG):(PH+PG)+(i-2)*(CH+WG);
+  const r2y=[0,1].map(i=>(r1y(i*2)+r1y(i*2+1))/2+CH/2-CH/2);
+  const cfY=(r2y[0]+r2y[1])/2;
+  const wR1x=0,wR2x=CW+RG,wCFx=wR2x+CW+RG,cupX=wCFx+CW+RG;
+  const eCFx=cupX+CupW+RG,eR2x=eCFx+CW+RG,eR1x=eR2x+CW+RG;
+  const totalW=eR1x+CW;
+
+  function SCard({s,w}){
+    const cw=w||CW;
+    if(!s)return<div style={{width:cw,height:CH,background:'var(--bg3)',border:'1px solid var(--border)',borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center'}}><span style={{fontSize:'0.65rem',color:'var(--text3)'}}>TBD</span></div>;
+    const{topSeedTeam:t1,bottomSeedTeam:t2,topSeedWins:w1=0,bottomSeedWins:w2=0}=s;
+    const done=w1>=4||w2>=4;
+    return(
+      <div style={{width:cw,height:CH,background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:8,overflow:'hidden',display:'flex',flexDirection:'column'}}>
+        {[[t1,w1],[t2,w2]].map(([t,w],i)=>{
+          const name=t?.name?.default||'';const abbrev=t?.abbrev||name.slice(0,3).toUpperCase()||'TBD';
+          const win=done&&w>=4;const lose=done&&w<4;
+          return(
+            <div key={i} style={{flex:1,display:'flex',alignItems:'center',gap:6,padding:'0 8px',borderBottom:i===0?'1px solid var(--border)':'none',background:win?'rgba(245,166,35,0.1)':'transparent',opacity:lose?0.38:1}}>
+              {name&&<img src={`Assets/League=NHL, Team=${name}.png`} style={{width:22,height:22,objectFit:'contain',flexShrink:0}} onError={e=>{e.target.style.display='none';}}/>}
+              <span style={{fontWeight:700,fontSize:'0.75rem',flex:1,color:win?'var(--gold)':'var(--text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{abbrev}</span>
+              <span style={{fontWeight:800,fontSize:'1.05rem',color:win?'var(--gold)':'var(--text)',minWidth:16,textAlign:'right'}}>{w}</span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  const lbl=(x,label)=><div style={{position:'absolute',top:-16,left:x,width:CW,textAlign:'center',fontSize:'0.52rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'1.5px',color:'var(--text3)'}}>{label}</div>;
+
+  return(
+    <div style={{marginBottom:28}}>
+      <div style={{fontSize:'0.68rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'2px',color:'var(--text3)',marginBottom:14,paddingLeft:2}}>Live Bracket</div>
+      <div style={{overflowX:'auto',WebkitOverflowScrolling:'touch',paddingBottom:8}}>
+        <div style={{position:'relative',width:totalW,height:TH+20,minWidth:totalW,paddingTop:20}}>
+          {lbl(wR1x,'R1')}{lbl(wR2x,'R2')}{lbl(wCFx,'CF')}
+          <div style={{position:'absolute',top:0,left:cupX,width:CupW,textAlign:'center',fontSize:'0.52rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'1.5px',color:'rgba(245,166,35,0.6)'}}>Cup Final</div>
+          {lbl(eCFx,'CF')}{lbl(eR2x,'R2')}{lbl(eR1x,'R1')}
+          {westR1.map((s,i)=><div key={s.seriesLetter} style={{position:'absolute',left:wR1x,top:r1y(i)+20}}><SCard s={s}/></div>)}
+          {[0,1].map(i=><div key={i} style={{position:'absolute',left:wR2x,top:r2y[i]+20}}><SCard s={westR2[i]||null}/></div>)}
+          <div style={{position:'absolute',left:wCFx,top:cfY+20}}><SCard s={westCF}/></div>
+          <div style={{position:'absolute',left:cupX,top:cfY+20}}><SCard s={cupFinal} w={CupW}/></div>
+          <div style={{position:'absolute',left:eCFx,top:cfY+20}}><SCard s={eastCF}/></div>
+          {[0,1].map(i=><div key={i} style={{position:'absolute',left:eR2x,top:r2y[i]+20}}><SCard s={eastR2[i]||null}/></div>)}
+          {eastR1.map((s,i)=><div key={s.seriesLetter} style={{position:'absolute',left:eR1x,top:r1y(i)+20}}><SCard s={s}/></div>)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── POOL VIEW (score + standings + rules) ──
+function PicksCompareModal({viewUser, bracket, onClose}){
+  const [tab,setTab]=useState('r1');
+  const picks=viewUser.picks||{r1:Array(8).fill(null),r2:Array(4).fill(null),r3:Array(2).fill(null),r4:Array(1).fill(null)};
+  const r2t=r2Teams(picks,bracket.round1);
+  const r3t=r3Teams(picks);
+  const r4t=r4Teams(picks);
+  const ltabs=[{key:'r1',label:'Round 1'},{key:'r2',label:'Round 2'},{key:'r3',label:'Conf Finals'},{key:'r4',label:'Cup Final'}];
+  return(
+    <div className="modal-bg" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal" style={{maxWidth:700,width:'95vw',maxHeight:'88vh',overflowY:'auto'}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+          <div className="modal-title" style={{margin:0}}>{viewUser.username}'s Picks</div>
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>✕ Close</button>
+        </div>
+        <div className="tabs" style={{marginBottom:16}}>{ltabs.map(t=><button key={t.key} className={`tab${tab===t.key?' active':''}`} onClick={()=>setTab(t.key)}>{t.label}</button>)}</div>
+        {tab==='r1'&&<><div className="conf-label">Eastern Conference</div><div className="grid-2 mb-3">{[0,1,2,3].map(i=><SeriesPicker key={i} label={`East Series ${i+1}`} team1={bracket.round1[i]?.team1} team2={bracket.round1[i]?.team2} pick={picks.r1[i]} onChange={()=>{}} disabled result={bracket.results.r1[i]}/>)}</div><div className="conf-label">Western Conference</div><div className="grid-2">{[4,5,6,7].map((i,n)=><SeriesPicker key={i} label={`West Series ${n+1}`} team1={bracket.round1[i]?.team1} team2={bracket.round1[i]?.team2} pick={picks.r1[i]} onChange={()=>{}} disabled result={bracket.results.r1[i]}/>)}</div></>}
+        {tab==='r2'&&<><div className="conf-label">Eastern Conference</div><div className="grid-2 mb-3">{[0,1].map(i=><SeriesPicker key={i} label={r2t[i]?.label} team1={r2t[i]?.team1} team2={r2t[i]?.team2} pick={picks.r2[i]} onChange={()=>{}} disabled result={bracket.results.r2[i]}/>)}</div><div className="conf-label">Western Conference</div><div className="grid-2">{[2,3].map(i=><SeriesPicker key={i} label={r2t[i]?.label} team1={r2t[i]?.team1} team2={r2t[i]?.team2} pick={picks.r2[i]} onChange={()=>{}} disabled result={bracket.results.r2[i]}/>)}</div></>}
+        {tab==='r3'&&<div className="grid-2">{[0,1].map(i=><SeriesPicker key={i} label={r3t[i]?.label} team1={r3t[i]?.team1} team2={r3t[i]?.team2} pick={picks.r3[i]} onChange={()=>{}} disabled result={bracket.results.r3[i]}/>)}</div>}
+        {tab==='r4'&&<div style={{maxWidth:440,margin:'0 auto'}}><SeriesPicker label={r4t[0]?.label} team1={r4t[0]?.team1} team2={r4t[0]?.team2} pick={picks.r4[0]} onChange={()=>{}} disabled result={bracket.results.r4[0]}/></div>}
+      </div>
+    </div>
+  );
+}
+
 function PoolView({user,data,onRefresh,onGoToPicks}){
   const {bracket}=data;
   const myScore=calcScore(user.picks,bracket.results);
   const maxAvail=calcMaxAvail(bracket.results);
   const stMap={setup:{label:'Setting Up',type:'setup'},open:{label:'Open for Picks',type:'open'},locked:{label:'Picks Locked',type:'locked'},complete:{label:'Complete',type:'complete'}};
   const st=stMap[bracket.status]||stMap.setup;
+  const [viewingUser,setViewingUser]=useState(null);
+  const canCompare=bracket.status==='locked'||bracket.status==='complete';
 
   // build ranked list: pickers first (by score desc), non-pickers after
   let rk=0;
@@ -956,6 +1057,7 @@ function PoolView({user,data,onRefresh,onGoToPicks}){
     <>
     <PoolHero user={user} myEntry={myEntry} scored={scored} bracket={bracket} onGoToPicks={onGoToPicks}/>
     <div className="page">
+      <LiveBracket season={bracket.season}/>
       <div className="hero-card">
         <div className="hero-label">Your Score · {bracket.season}</div>
         <div className="hero-score">{user.picks?myScore:'—'}</div>
@@ -978,14 +1080,15 @@ function PoolView({user,data,onRefresh,onGoToPicks}){
             <thead><tr><th>#</th><th>Player</th><th className="text-right">Score</th><th className="text-right">R1</th><th className="text-right">R2</th><th className="text-right">Conf</th><th className="text-right">Cup</th><th className="text-right">Bonus</th></tr></thead>
             <tbody>{scored.map(u=>{
               const b=bd(u);const tb=b.filter(Boolean).reduce((a,x)=>a+x.bonus,0);const hasAv=u.avatar!=null;
-              return(<tr key={u.id} className={u.id===user.id?'my-row':''}>
+              const clickable=canCompare&&u.picks&&u.id!==user.id;
+              return(<tr key={u.id} className={u.id===user.id?'my-row':''} onClick={clickable?()=>setViewingUser(u):undefined} style={{cursor:clickable?'pointer':'default'}}>
                 <td><strong className={u.rank===1?'lb-rank-1':u.rank===2?'lb-rank-2':u.rank===3?'lb-rank-3':''}>{u.rank?rankIcon(u.rank):'—'}</strong></td>
                 <td>
                   <div className="flex items-center gap-2">
                     <div style={{width:26,height:26,borderRadius:'50%',background:hasAv?AVATAR_LIST[u.avatar]?.bg:'#7c5cfc',overflow:'hidden',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:hasAv?0:'0.65rem',fontWeight:800,color:'#fff'}}>
                       {hasAv?<AvatarSvg id={u.avatar}/>:u.username[0]?.toUpperCase()}
                     </div>
-                    <span style={{fontWeight:600}}>{u.username}{u.id===user.id&&<span className="text-dim2 text-xs"> (you)</span>}{!u.picks&&<span className="text-dim2 text-xs"> · no picks</span>}</span>
+                    <span style={{fontWeight:600}}>{u.username}{u.id===user.id&&<span className="text-dim2 text-xs"> (you)</span>}{!u.picks&&<span className="text-dim2 text-xs"> · no picks</span>}{clickable&&<span className="text-dim2 text-xs"> · view picks</span>}</span>
                   </div>
                 </td>
                 <td className="text-right"><strong style={{color:'var(--gold)',fontSize:'1.05rem'}}>{u.picks?u.score:'—'}</strong></td>
@@ -1009,6 +1112,7 @@ function PoolView({user,data,onRefresh,onGoToPicks}){
         <div className="scoring-row"><span className="text-dim">Maximum possible</span><span className="pts-chip">425 pts</span></div>
       </div>
     </div>
+    {viewingUser&&<PicksCompareModal viewUser={viewingUser} bracket={bracket} onClose={()=>setViewingUser(null)}/>}
     </>
   );
 }
