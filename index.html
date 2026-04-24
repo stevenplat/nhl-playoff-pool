@@ -936,16 +936,25 @@ function PoolHero({user,myEntry,scored,bracket,onGoToPicks}){
 // ── LIVE BRACKET ──
 function LiveBracket({season}){
   const [series,setSeries]=useState(null);
+  const [err,setErr]=useState('');
+  const [loading,setLoading]=useState(true);
+
   useEffect(()=>{
-    const KEY=`nhl_live_${season}`;
-    try{const c=JSON.parse(localStorage.getItem(KEY)||'null');if(c&&Date.now()-c.ts<24*60*60*1000){setSeries(c.d);return;}}catch(e){}
-    nhlFetchPlayoff(season).then(d=>{
-      localStorage.setItem(KEY,JSON.stringify({d:d.series,ts:Date.now()}));
-      setSeries(d.series);
-    }).catch(()=>{});
+    // Normalise season: '2025' → '20252026', '20252026' → '20252026'
+    const apiSeason=season.length===4?`${season}${parseInt(season)+1}`:season;
+    const KEY=`nhl_live_${apiSeason}`;
+    try{const c=JSON.parse(localStorage.getItem(KEY)||'null');if(c&&Date.now()-c.ts<24*60*60*1000){setSeries(c.d);setLoading(false);return;}}catch(e){}
+    nhlFetchPlayoff(apiSeason)
+      .then(d=>{
+        localStorage.setItem(KEY,JSON.stringify({d:d.series,ts:Date.now()}));
+        setSeries(d.series);setLoading(false);
+      })
+      .catch(e=>{setErr(e.message);setLoading(false);});
   },[season]);
 
-  if(!series?.length)return null;
+  if(loading)return<div style={{padding:'12px 0',fontSize:'0.78rem',color:'var(--text3)',marginBottom:16}}>Loading live bracket…</div>;
+  if(err)return<div style={{padding:'10px 14px',background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:8,fontSize:'0.78rem',color:'var(--text3)',marginBottom:16}}>Live bracket unavailable: {err}</div>;
+  if(!series?.length)return<div style={{padding:'10px 14px',background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:8,fontSize:'0.78rem',color:'var(--text3)',marginBottom:16}}>No playoff data yet for this season.</div>;
 
   const byRound=r=>series.filter(s=>s.playoffRound===r).sort((a,b)=>a.seriesLetter.localeCompare(b.seriesLetter));
   const r1=byRound(1),r2=byRound(2),r3=byRound(3),r4=byRound(4);
