@@ -450,18 +450,32 @@ function nhlParseResults(series) {
 }
 
 // ── HELPERS ──
-function r2Teams(picks, r1cfg, r2cfg) {
+function r2Teams(picks, r1cfg, r2cfg, r1res) {
   // If admin has set explicit R2 matchups, use those (handles reseeding)
   if(r2cfg?.some(s=>s.team1||s.team2)){
-    return r2cfg.map(s=>({...s,team1:s.team1||'TBD',team2:s.team2||'TBD'}));
+    // Fill any blank slots with actual R1 winner or user's pick (never show eliminated teams)
+    const incomplete = conf => r1cfg
+      .map((s,i)=>({i, winner: r1res?.[i]?.winner || picks?.r1?.[i]?.winner}))
+      .filter(({i,winner})=>r1cfg[i].conf===conf && !r1res?.[i]?.winner && winner);
+    const eastQ=incomplete('East').map(x=>x.winner);
+    const westQ=incomplete('West').map(x=>x.winner);
+    const eIdx={n:0}, wIdx={n:0};
+    return r2cfg.map(s=>{
+      const q=s.conf==='East'?eastQ:westQ, ix=s.conf==='East'?eIdx:wIdx;
+      let t1=s.team1, t2=s.team2;
+      if(!t1||t1==='TBD') t1=q[ix.n++]||'TBD';
+      if(!t2||t2==='TBD') t2=q[ix.n++]||'TBD';
+      return {...s, team1:t1, team2:t2};
+    });
   }
   // NHL reseeds sequentially: top pair (0,1) vs bottom pair (2,3) within each conf
-  const pw = i => picks?.r1?.[i]?.winner || (r1cfg[i]?.team1 && r1cfg[i]?.team2 ? `${r1cfg[i].team1} / ${r1cfg[i].team2}` : 'TBD');
+  // Use actual R1 winner first (advancing team), then user's pick for incomplete series, never show eliminated teams
+  const pw = (i, r1res) => r1res?.[i]?.winner || picks?.r1?.[i]?.winner || 'TBD';
   return [
-    {team1:pw(0),team2:pw(1),conf:'East',label:'East R2 – Series 1'},
-    {team1:pw(2),team2:pw(3),conf:'East',label:'East R2 – Series 2'},
-    {team1:pw(4),team2:pw(5),conf:'West',label:'West R2 – Series 1'},
-    {team1:pw(6),team2:pw(7),conf:'West',label:'West R2 – Series 2'},
+    {team1:pw(0,r1res),team2:pw(1,r1res),conf:'East',label:'East R2 – Series 1'},
+    {team1:pw(2,r1res),team2:pw(3,r1res),conf:'East',label:'East R2 – Series 2'},
+    {team1:pw(4,r1res),team2:pw(5,r1res),conf:'West',label:'West R2 – Series 1'},
+    {team1:pw(6,r1res),team2:pw(7,r1res),conf:'West',label:'West R2 – Series 2'},
   ];
 }
 function r3Teams(picks) {
@@ -480,27 +494,6 @@ function actualR2(br){
 function actualR3(br){ const rw=i=>br.results.r2[i]?.winner||`R2 Winner ${i+1}`; return[{team1:rw(0),team2:rw(1),label:'East Conf Final'},{team1:rw(2),team2:rw(3),label:'West Conf Final'}];}
 function actualR4(br){ const rw=i=>br.results.r3[i]?.winner||(i===0?'East Champ':'West Champ'); return[{team1:rw(0),team2:rw(1),label:'Stanley Cup Final'}];}
 
-// For any TBD slot in r2t, substitute the user's own R1 pick for that incomplete series
-function fillTBDFromPicks(r2t, picks, r1cfg, r1results) {
-  const byConf = conf => {
-    const inc = [];
-    r1cfg.forEach((s, i) => {
-      if (s.conf === conf && !r1results?.[i]?.winner && picks?.r1?.[i]?.winner)
-        inc.push(picks.r1[i].winner);
-    });
-    return inc;
-  };
-  const eastQ = byConf('East'), westQ = byConf('West');
-  const eIdx = {n:0}, wIdx = {n:0};
-  return r2t.map(slot => {
-    const q = slot.conf==='East' ? eastQ : westQ;
-    const ix = slot.conf==='East' ? eIdx : wIdx;
-    let t1=slot.team1, t2=slot.team2;
-    if (!t1||t1==='TBD') t1 = q[ix.n++] || 'TBD';
-    if (!t2||t2==='TBD') t2 = q[ix.n++] || 'TBD';
-    return {...slot, team1:t1, team2:t2};
-  });
-}
 
 function calcScore(picks, results) {
   if (!picks || !results) return 0; let s = 0;
@@ -1060,7 +1053,7 @@ function LiveBracket({season}){
 function PicksCompareModal({viewUser, bracket, onClose}){
   const [tab,setTab]=useState('r1');
   const picks=viewUser.picks||{r1:Array(8).fill(null),r2:Array(4).fill(null),r3:Array(2).fill(null),r4:Array(1).fill(null)};
-  const r2t=fillTBDFromPicks(r2Teams(picks,bracket.round1,bracket.round2),picks,bracket.round1,bracket.results.r1);
+  const r2t=r2Teams(picks,bracket.round1,bracket.round2,bracket.results.r1);
   const r3t=r3Teams(picks);
   const r4t=r4Teams(picks);
   const ltabs=[{key:'r1',label:'Round 1'},{key:'r2',label:'Round 2'},{key:'r3',label:'Conf Finals'},{key:'r4',label:'Cup Final'}];
@@ -1209,7 +1202,7 @@ function MyPicksPage({user,data,onSavePicks,startWizardR2,onWizardStarted}){
   useEffect(()=>{setPicks(init());setStep(isRepick?R2_STEP:0);setMode(user.picks?'overview':'wizard');},[user.id,!!user.picks]);
   useEffect(()=>{if(startWizardR2){setStep(R2_STEP);setMode('wizard');onWizardStarted?.();}},[startWizardR2]);
 
-  const r2t=fillTBDFromPicks(r2Teams(picks,bracket.round1,bracket.round2),picks,bracket.round1,bracket.results.r1);
+  const r2t=r2Teams(picks,bracket.round1,bracket.round2,bracket.results.r1);
   const r3t=r3Teams(picks);
   const r4t=r4Teams(picks);
 
