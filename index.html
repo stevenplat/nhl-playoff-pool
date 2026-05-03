@@ -961,8 +961,8 @@ function PoolHero({user,myEntry,scored,bracket,onGoToPicks,onRepickR2}){
       {!user.picks&&bracket.status==='open'&&(
         <button className="btn btn-ghost btn-sm" style={{marginTop:16,position:'relative',zIndex:2,borderColor:'rgba(255,255,255,0.2)',color:'rgba(255,255,255,0.7)'}} onClick={onGoToPicks}>Make Your Picks →</button>
       )}
-      {bracket.status==='open_r2'&&!user.is_admin&&(
-        <button onClick={onRepickR2} style={{marginTop:24,position:'relative',zIndex:2,padding:'16px 48px',fontSize:'1.1rem',fontWeight:800,borderRadius:14,background:'var(--purple)',color:'#fff',border:'none',cursor:'pointer',letterSpacing:'0.5px',boxShadow:'0 4px 32px rgba(124,92,252,0.5)',fontFamily:'inherit'}}>
+      {bracket.status==='open_r2'&&(
+        <button onClick={user.is_admin?onGoToPicks:onRepickR2} style={{marginTop:24,position:'relative',zIndex:2,padding:'16px 48px',fontSize:'1.1rem',fontWeight:800,borderRadius:14,background:'var(--purple)',color:'#fff',border:'none',cursor:'pointer',letterSpacing:'0.5px',boxShadow:'0 4px 32px rgba(124,92,252,0.5)',fontFamily:'inherit'}}>
           ✏️ Repick Round 2+
         </button>
       )}
