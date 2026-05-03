@@ -478,6 +478,28 @@ function actualR2(br){
 function actualR3(br){ const rw=i=>br.results.r2[i]?.winner||`R2 Winner ${i+1}`; return[{team1:rw(0),team2:rw(1),label:'East Conf Final'},{team1:rw(2),team2:rw(3),label:'West Conf Final'}];}
 function actualR4(br){ const rw=i=>br.results.r3[i]?.winner||(i===0?'East Champ':'West Champ'); return[{team1:rw(0),team2:rw(1),label:'Stanley Cup Final'}];}
 
+// For any TBD slot in r2t, substitute the user's own R1 pick for that incomplete series
+function fillTBDFromPicks(r2t, picks, r1cfg, r1results) {
+  const byConf = conf => {
+    const inc = [];
+    r1cfg.forEach((s, i) => {
+      if (s.conf === conf && !r1results?.[i]?.winner && picks?.r1?.[i]?.winner)
+        inc.push(picks.r1[i].winner);
+    });
+    return inc;
+  };
+  const eastQ = byConf('East'), westQ = byConf('West');
+  const eIdx = {n:0}, wIdx = {n:0};
+  return r2t.map(slot => {
+    const q = slot.conf==='East' ? eastQ : westQ;
+    const ix = slot.conf==='East' ? eIdx : wIdx;
+    let t1=slot.team1, t2=slot.team2;
+    if (!t1||t1==='TBD') t1 = q[ix.n++] || 'TBD';
+    if (!t2||t2==='TBD') t2 = q[ix.n++] || 'TBD';
+    return {...slot, team1:t1, team2:t2};
+  });
+}
+
 function calcScore(picks, results) {
   if (!picks || !results) return 0; let s = 0;
   [['r1',8],['r2',4],['r3',2],['r4',1]].forEach(([k,n],ri)=>{
@@ -1036,7 +1058,7 @@ function LiveBracket({season}){
 function PicksCompareModal({viewUser, bracket, onClose}){
   const [tab,setTab]=useState('r1');
   const picks=viewUser.picks||{r1:Array(8).fill(null),r2:Array(4).fill(null),r3:Array(2).fill(null),r4:Array(1).fill(null)};
-  const r2t=r2Teams(picks,bracket.round1,bracket.round2);
+  const r2t=fillTBDFromPicks(r2Teams(picks,bracket.round1,bracket.round2),picks,bracket.round1,bracket.results.r1);
   const r3t=r3Teams(picks);
   const r4t=r4Teams(picks);
   const ltabs=[{key:'r1',label:'Round 1'},{key:'r2',label:'Round 2'},{key:'r3',label:'Conf Finals'},{key:'r4',label:'Cup Final'}];
@@ -1057,7 +1079,7 @@ function PicksCompareModal({viewUser, bracket, onClose}){
   );
 }
 
-function PoolView({user,data,onRefresh,onGoToPicks}){
+function PoolView({user,data,onRefresh,onGoToPicks,onRepickR2}){
   const {bracket}=data;
   const myScore=calcScore(user.picks,bracket.results);
   const maxAvail=calcMaxAvail(bracket.results);
@@ -1093,6 +1115,17 @@ function PoolView({user,data,onRefresh,onGoToPicks}){
       </div>
 
 
+      {bracket.status==='open_r2'&&!user.is_admin&&(
+        <div style={{background:'linear-gradient(135deg,rgba(124,92,252,0.15),rgba(124,92,252,0.05))',border:'1px solid rgba(124,92,252,0.3)',borderRadius:14,padding:'20px 24px',marginBottom:20,display:'flex',alignItems:'center',justifyContent:'space-between',gap:16,flexWrap:'wrap'}}>
+          <div>
+            <div style={{fontWeight:700,fontSize:'0.95rem',color:'var(--text)',marginBottom:4}}>Round 2 picks are open</div>
+            <div style={{fontSize:'0.78rem',color:'var(--text3)'}}>R1 points are locked in — update your Round 2+ picks now.</div>
+          </div>
+          <button className="btn btn-primary" onClick={onRepickR2} style={{whiteSpace:'nowrap',fontWeight:700,padding:'12px 28px'}}>
+            ✏️ Repick Round 2+
+          </button>
+        </div>
+      )}
       <div className="card mb-3">
         <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
           <div className="card-title" style={{marginBottom:0}}>Standings</div>
@@ -1159,7 +1192,7 @@ function SeriesPicker({label,team1,team2,pick,onChange,disabled,result}){
 }
 
 // ── MY PICKS (WIZARD) ──
-function MyPicksPage({user,data,onSavePicks}){
+function MyPicksPage({user,data,onSavePicks,startWizardR2,onWizardStarted}){
   const {bracket}=data;
   const locked=bracket.status==='locked'||bracket.status==='complete';
   const isRepick=bracket.status==='open_r2';
@@ -1167,13 +1200,14 @@ function MyPicksPage({user,data,onSavePicks}){
   const R2_STEP=8; // index of first R2 step in STEPS
   const init=()=>user.picks||{r1:Array(8).fill(null),r2:Array(4).fill(null),r3:Array(2).fill(null),r4:Array(1).fill(null)};
   const [picks,setPicks]=useState(init);
-  const [step,setStep]=useState(isRepick?R2_STEP:0);
+  const [step,setStep]=useState(startWizardR2?R2_STEP:isRepick?R2_STEP:0);
   const [saving,setSaving]=useState(false);
-  const [mode,setMode]=useState(user.picks?'overview':'wizard'); // 'wizard'|'overview'
+  const [mode,setMode]=useState(startWizardR2?'wizard':user.picks?'overview':'wizard'); // 'wizard'|'overview'
   const [lockedTab,setLockedTab]=useState('r1');
   useEffect(()=>{setPicks(init());setStep(isRepick?R2_STEP:0);setMode(user.picks?'overview':'wizard');},[user.id,!!user.picks]);
+  useEffect(()=>{if(startWizardR2){setStep(R2_STEP);setMode('wizard');onWizardStarted?.();}},[startWizardR2]);
 
-  const r2t=r2Teams(picks,bracket.round1,bracket.round2);
+  const r2t=fillTBDFromPicks(r2Teams(picks,bracket.round1,bracket.round2),picks,bracket.round1,bracket.results.r1);
   const r3t=r3Teams(picks);
   const r4t=r4Teams(picks);
 
@@ -1960,12 +1994,15 @@ function App(){
 
   const liveUser = data?.users?.find(u=>u.id===currentUser.id) || currentUser;
   const needsPicks = !liveUser.picks && data?.bracket?.status === 'open';
+  const [startWizardR2, setStartWizardR2] = useState(false);
+
+  function handleRepickR2(){ setStartWizardR2(true); setView('picks'); }
 
   return(
     <>
       <NavBar user={liveUser} view={view} setView={setView} onSwitchProfile={handleSwitchProfile} onSignOut={handleSignOut} needsPicks={needsPicks}/>
-      {view==='pool'          &&<PoolView          user={liveUser} data={data} onRefresh={handleRefresh} onGoToPicks={()=>setView('picks')}/>}
-      {view==='picks'         &&<MyPicksPage        user={liveUser} data={data} onSavePicks={handleSavePicks}/>}
+      {view==='pool'          &&<PoolView          user={liveUser} data={data} onRefresh={handleRefresh} onGoToPicks={()=>setView('picks')} onRepickR2={handleRepickR2}/>}
+      {view==='picks'         &&<MyPicksPage        user={liveUser} data={data} onSavePicks={handleSavePicks} startWizardR2={startWizardR2} onWizardStarted={()=>setStartWizardR2(false)}/>}
       {view==='manage-users'  &&liveUser.is_admin&&<ManageUsersPage  data={data} onRefresh={handleRefresh}/>}
       {view==='bracket-setup' &&liveUser.is_admin&&<BracketSetupPage data={data} onRefresh={handleRefresh}/>}
       {view==='results'       &&liveUser.is_admin&&<ResultsPage      data={data} onRefresh={handleRefresh}/>}
