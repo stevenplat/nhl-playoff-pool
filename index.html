@@ -308,6 +308,12 @@ const DEFAULT_ROUND1 = [
   {id:6,team1:'',team2:'',conf:'West'},{id:7,team1:'',team2:'',conf:'West'},
 ];
 const DEFAULT_RESULTS = { r1:Array(8).fill(null), r2:Array(4).fill(null), r3:Array(2).fill(null), r4:Array(1).fill(null) };
+const DEFAULT_ROUND2 = [
+  {id:0,team1:'',team2:'',conf:'East',label:'East R2 – Series 1'},
+  {id:1,team1:'',team2:'',conf:'East',label:'East R2 – Series 2'},
+  {id:2,team1:'',team2:'',conf:'West',label:'West R2 – Series 1'},
+  {id:3,team1:'',team2:'',conf:'West',label:'West R2 – Series 2'},
+];
 
 // ── SUPABASE DATA LAYER ──
 async function dbLoadAll(poolId) {
@@ -335,13 +341,14 @@ async function dbLoadAll(poolId) {
       season:  config.season  || '2025',
       status:  config.status  || 'setup',
       round1:  (config.round1?.length === 8) ? config.round1 : DEFAULT_ROUND1,
+      round2:  (config.round2?.length === 4) ? config.round2 : DEFAULT_ROUND2,
       results: config.results?.r1 ? config.results : DEFAULT_RESULTS,
     }
   };
 }
 
 async function dbSaveConfig(bracket, poolId) {
-  const payload = { pool_id:poolId, season:bracket.season, status:bracket.status, round1:bracket.round1, results:bracket.results, updated_at:new Date().toISOString() };
+  const payload = { pool_id:poolId, season:bracket.season, status:bracket.status, round1:bracket.round1, round2:bracket.round2, results:bracket.results, updated_at:new Date().toISOString() };
   // Row is guaranteed to exist (created in dbLoadAll on first visit), so UPDATE is safe
   const { error } = await sb.from('pool_config').update(payload).eq('pool_id', poolId);
   if (error) throw error;
@@ -442,7 +449,11 @@ function nhlParseResults(series) {
 }
 
 // ── HELPERS ──
-function r2Teams(picks, r1cfg) {
+function r2Teams(picks, r1cfg, r2cfg) {
+  // If admin has set explicit R2 matchups, use those (handles reseeding)
+  if(r2cfg?.some(s=>s.team1||s.team2)){
+    return r2cfg.map(s=>({...s,team1:s.team1||'TBD',team2:s.team2||'TBD'}));
+  }
   const pw = i => picks?.r1?.[i]?.winner || (r1cfg[i]?.team1 && r1cfg[i]?.team2 ? `${r1cfg[i].team1} / ${r1cfg[i].team2}` : 'TBD');
   return [
     {team1:pw(0),team2:pw(3),conf:'East',label:'East R2 – Series 1'},
@@ -459,7 +470,11 @@ function r4Teams(picks) {
   const pw = i => picks?.r3?.[i]?.winner || (i===0?'East Champion':'West Champion');
   return [{team1:pw(0),team2:pw(1),label:'🏆 Stanley Cup Final'}];
 }
-function actualR2(br){ const rw=i=>br.results.r1[i]?.winner||`R1 Winner ${i+1}`; return[{team1:rw(0),team2:rw(3),label:'East R2 S1'},{team1:rw(1),team2:rw(2),label:'East R2 S2'},{team1:rw(4),team2:rw(7),label:'West R2 S1'},{team1:rw(5),team2:rw(6),label:'West R2 S2'}];}
+function actualR2(br){
+  if(br.round2?.some(s=>s.team1||s.team2)) return br.round2.map(s=>({...s,team1:s.team1||'TBD',team2:s.team2||'TBD'}));
+  const rw=i=>br.results.r1[i]?.winner||`R1 Winner ${i+1}`;
+  return[{team1:rw(0),team2:rw(3),label:'East R2 S1'},{team1:rw(1),team2:rw(2),label:'East R2 S2'},{team1:rw(4),team2:rw(7),label:'West R2 S1'},{team1:rw(5),team2:rw(6),label:'West R2 S2'}];
+}
 function actualR3(br){ const rw=i=>br.results.r2[i]?.winner||`R2 Winner ${i+1}`; return[{team1:rw(0),team2:rw(1),label:'East Conf Final'},{team1:rw(2),team2:rw(3),label:'West Conf Final'}];}
 function actualR4(br){ const rw=i=>br.results.r3[i]?.winner||(i===0?'East Champ':'West Champ'); return[{team1:rw(0),team2:rw(1),label:'Stanley Cup Final'}];}
 
@@ -1021,7 +1036,7 @@ function LiveBracket({season}){
 function PicksCompareModal({viewUser, bracket, onClose}){
   const [tab,setTab]=useState('r1');
   const picks=viewUser.picks||{r1:Array(8).fill(null),r2:Array(4).fill(null),r3:Array(2).fill(null),r4:Array(1).fill(null)};
-  const r2t=r2Teams(picks,bracket.round1);
+  const r2t=r2Teams(picks,bracket.round1,bracket.round2);
   const r3t=r3Teams(picks);
   const r4t=r4Teams(picks);
   const ltabs=[{key:'r1',label:'Round 1'},{key:'r2',label:'Round 2'},{key:'r3',label:'Conf Finals'},{key:'r4',label:'Cup Final'}];
@@ -1147,16 +1162,18 @@ function SeriesPicker({label,team1,team2,pick,onChange,disabled,result}){
 function MyPicksPage({user,data,onSavePicks}){
   const {bracket}=data;
   const locked=bracket.status==='locked'||bracket.status==='complete';
+  const isRepick=bracket.status==='open_r2';
   const setup=bracket.status==='setup';
+  const R2_STEP=8; // index of first R2 step in STEPS
   const init=()=>user.picks||{r1:Array(8).fill(null),r2:Array(4).fill(null),r3:Array(2).fill(null),r4:Array(1).fill(null)};
   const [picks,setPicks]=useState(init);
-  const [step,setStep]=useState(0);
+  const [step,setStep]=useState(isRepick?R2_STEP:0);
   const [saving,setSaving]=useState(false);
   const [mode,setMode]=useState(user.picks?'overview':'wizard'); // 'wizard'|'overview'
   const [lockedTab,setLockedTab]=useState('r1');
-  useEffect(()=>{setPicks(init());setStep(0);setMode(user.picks?'overview':'wizard');},[user.id,!!user.picks]);
+  useEffect(()=>{setPicks(init());setStep(isRepick?R2_STEP:0);setMode(user.picks?'overview':'wizard');},[user.id,!!user.picks]);
 
-  const r2t=r2Teams(picks,bracket.round1);
+  const r2t=r2Teams(picks,bracket.round1,bracket.round2);
   const r3t=r3Teams(picks);
   const r4t=r4Teams(picks);
 
@@ -1178,10 +1195,13 @@ function MyPicksPage({user,data,onSavePicks}){
     {round:'r4',idx:0,roundLabel:'🏆 Stanley Cup Final',conf:'',team1:r4t[0].team1,team2:r4t[0].team2},
   ];
   const totalSteps=STEPS.length;
+  const wizardMin=isRepick?R2_STEP:0; // earliest step reachable in current mode
   const cur=STEPS[Math.min(step,totalSteps-1)];
   const curPick=picks[cur.round]?.[cur.idx];
-  const completedCount=STEPS.filter(s=>picks[s.round]?.[s.idx]?.winner&&picks[s.round]?.[s.idx]?.length).length;
-  const allDone=completedCount===totalSteps;
+  // In repick mode only count R2+ steps toward completion
+  const stepsToComplete=isRepick?STEPS.slice(R2_STEP):STEPS;
+  const completedCount=stepsToComplete.filter(s=>picks[s.round]?.[s.idx]?.winner&&picks[s.round]?.[s.idx]?.length).length;
+  const allDone=completedCount===stepsToComplete.length;
 
   function setPick(round,idx,val){setPicks(p=>{const n={...p,[round]:[...p[round]]};n[round][idx]=val;return n;});}
   function handleTeamClick(team){if(!team)return;setPick(cur.round,cur.idx,{...(curPick||{}),winner:team,length:(curPick?.length)||null});}
@@ -1236,7 +1256,7 @@ function MyPicksPage({user,data,onSavePicks}){
     return(
       <div className="page">
         <div className="page-title" style={{marginBottom:16}}>My Bracket</div>
-        <Alert type="warn">Picks are locked — this is your submitted bracket.</Alert>
+        <Alert type="warn">{bracket.status==='complete'?'Pool is complete — final bracket.':'Picks are locked — this is your submitted bracket.'}</Alert>
         <div className="tabs" style={{marginTop:16}}>{ltabs.map(t=><button key={t.key} className={`tab${lockedTab===t.key?' active':''}`} onClick={()=>setLockedTab(t.key)}>{t.label}</button>)}</div>
         {lockedTab==='r1'&&<><div className="conf-label">Eastern Conference</div><div className="grid-2 mb-3">{[0,1,2,3].map(i=><SeriesPicker key={i} label={`East Series ${i+1}`} team1={bracket.round1[i].team1} team2={bracket.round1[i].team2} pick={picks.r1[i]} onChange={()=>{}} disabled result={bracket.results.r1[i]}/>)}</div><div className="conf-label">Western Conference</div><div className="grid-2">{[4,5,6,7].map((i,n)=><SeriesPicker key={i} label={`West Series ${n+1}`} team1={bracket.round1[i].team1} team2={bracket.round1[i].team2} pick={picks.r1[i]} onChange={()=>{}} disabled result={bracket.results.r1[i]}/>)}</div></>}
         {lockedTab==='r2'&&<><div className="conf-label">Eastern Conference</div><div className="grid-2 mb-3">{[0,1].map(i=><SeriesPicker key={i} label={r2t[i].label} team1={r2t[i].team1} team2={r2t[i].team2} pick={picks.r2[i]} onChange={()=>{}} disabled result={bracket.results.r2[i]}/>)}</div><div className="conf-label">Western Conference</div><div className="grid-2">{[2,3].map(i=><SeriesPicker key={i} label={r2t[i].label} team1={r2t[i].team1} team2={r2t[i].team2} pick={picks.r2[i]} onChange={()=>{}} disabled result={bracket.results.r2[i]}/>)}</div></>}
@@ -1443,10 +1463,10 @@ function MyPicksPage({user,data,onSavePicks}){
             ))}
           </div>
         </div>
-        {bracket.status==='open'&&(
+        {(bracket.status==='open'||isRepick)&&(
           <div style={{textAlign:'center',marginTop:32,padding:'0 20px'}}>
-            <button className="btn btn-primary" onClick={()=>{setStep(0);setMode('wizard');}} style={{padding:'14px 40px',fontSize:'1rem',fontWeight:700,borderRadius:12}}>
-              ✏️ Edit Picks
+            <button className="btn btn-primary" onClick={()=>{setStep(isRepick?R2_STEP:0);setMode('wizard');}} style={{padding:'14px 40px',fontSize:'1rem',fontWeight:700,borderRadius:12}}>
+              ✏️ {isRepick?'Edit Round 2+ Picks':'Edit Picks'}
             </button>
           </div>
         )}
@@ -1470,7 +1490,8 @@ function MyPicksPage({user,data,onSavePicks}){
 
         {/* Step dots */}
         <div style={{display:'flex',gap:4,marginTop:24,marginBottom:24,flexWrap:'wrap',justifyContent:'center',maxWidth:320,padding:'0 20px'}}>
-          {STEPS.map((s,i)=>{
+          {stepsToComplete.map((s,ii)=>{
+            const i=isRepick?ii+wizardMin:ii;
             const done=picks[s.round]?.[s.idx]?.winner&&picks[s.round]?.[s.idx]?.length;
             return <div key={i} style={{width:8,height:8,borderRadius:'50%',background:i===step?`rgb(${goldAccent})`:done?`rgba(${goldAccent},0.45)`:'var(--bg4)',flexShrink:0}}/>;
           })}
@@ -1527,7 +1548,7 @@ function MyPicksPage({user,data,onSavePicks}){
         )}
 
         {/* Back */}
-        <button className="btn btn-ghost btn-sm" onClick={()=>setStep(s=>s-1)} style={{color:'var(--text3)',marginTop:4}}>← Back</button>
+        {step>wizardMin&&<button className="btn btn-ghost btn-sm" onClick={()=>setStep(s=>Math.max(s-1,wizardMin))} style={{color:'var(--text3)',marginTop:4}}>← Back</button>}
       </div>
     );
   }
@@ -1540,17 +1561,18 @@ function MyPicksPage({user,data,onSavePicks}){
       <div style={{marginBottom:40}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
           <span style={{fontSize:'0.7rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'1.5px',color:'var(--text3)'}}>
-            Series {step+1} of {totalSteps}
+            {isRepick?`R2+ Series ${step-wizardMin+1} of ${stepsToComplete.length}`:`Series ${step+1} of ${totalSteps}`}
           </span>
           <span style={{fontSize:'0.7rem',color:'var(--text3)'}}>
-            {completedCount}/{totalSteps} complete
+            {completedCount}/{stepsToComplete.length} complete
           </span>
         </div>
         <div style={{height:3,background:'var(--bg3)',borderRadius:4,overflow:'hidden'}}>
-          <div style={{height:'100%',width:`${(completedCount/totalSteps)*100}%`,background:'var(--purple)',borderRadius:4,transition:'width .4s ease'}}/>
+          <div style={{height:'100%',width:`${(completedCount/stepsToComplete.length)*100}%`,background:'var(--purple)',borderRadius:4,transition:'width .4s ease'}}/>
         </div>
         <div style={{display:'flex',gap:4,marginTop:10,flexWrap:'wrap'}}>
-          {STEPS.map((s,i)=>{
+          {stepsToComplete.map((s,ii)=>{
+            const i=isRepick?ii+wizardMin:ii;
             const done=picks[s.round]?.[s.idx]?.winner&&picks[s.round]?.[s.idx]?.length;
             return(
               <button key={i} onClick={()=>setStep(i)}
@@ -1695,6 +1717,7 @@ function BracketSetupPage({data,onRefresh}){
   const [bracket,setBracket]=useState(data.bracket);const [msg,setMsg]=useState('');const [msgType,setMsgType]=useState('success');
   const [saving,setSaving]=useState(false);const [importing,setImporting]=useState(false);
   useEffect(()=>{setBracket(data.bracket);},[data.bracket]);
+  function setR2Team(idx,field,val){setBracket(p=>{const r2=[...(p.round2||DEFAULT_ROUND2)];r2[idx]={...r2[idx],[field]:val};return{...p,round2:r2};});}
   // Auto-import teams from NHL when bracket is empty
   useEffect(()=>{
     if(data.bracket.round1.some(s=>s.team1||s.team2))return; // already has teams
@@ -1724,7 +1747,7 @@ function BracketSetupPage({data,onRefresh}){
     const updated={...bracket,status:newStatus};
     setBracket(updated);
     setSaving(true);
-    const labels={setup:'Setup',open:'Open — accepting picks',locked:'Locked',complete:'Complete'};
+    const labels={setup:'Setup',open:'Open — accepting picks',open_r2:'Open R2+ — accepting Round 2+ picks',locked:'Locked',complete:'Complete'};
     try{
       await dbSaveConfig(updated,data.poolId);
       await onRefresh();
@@ -1746,7 +1769,7 @@ function BracketSetupPage({data,onRefresh}){
     }catch(e){setMsg(`NHL import failed: ${e.message}`);setMsgType('danger');}
     finally{setImporting(false);setTimeout(()=>setMsg(''),6000);}
   }
-  const statusOpts=[{v:'setup',l:'Setup',d:'Not yet open'},{v:'open',l:'Open',d:'Accepting picks'},{v:'locked',l:'Locked',d:'No more picks'},{v:'complete',l:'Complete',d:'Season over'}];
+  const statusOpts=[{v:'setup',l:'Setup',d:'Not yet open'},{v:'open',l:'Open',d:'Accepting R1 picks'},{v:'open_r2',l:'Open R2+',d:'Accepting Round 2+ picks'},{v:'locked',l:'Locked',d:'No more picks'},{v:'complete',l:'Complete',d:'Season over'}];
   return(
     <div className="page">
       <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
@@ -1771,6 +1794,13 @@ function BracketSetupPage({data,onRefresh}){
       <div className="grid-2">
         <div className="card"><div className="card-title">Eastern Conference — Round 1</div>{[0,1,2,3].map(i=><div key={i} style={{marginBottom:'16px'}}><div className="form-label">East Series {i+1}</div><div className="flex gap-2"><input className="form-input" placeholder="Higher seed" value={bracket.round1[i].team1} onChange={e=>setTeam(i,'team1',e.target.value)}/><input className="form-input" placeholder="Lower seed" value={bracket.round1[i].team2} onChange={e=>setTeam(i,'team2',e.target.value)}/></div></div>)}</div>
         <div className="card"><div className="card-title">Western Conference — Round 1</div>{[4,5,6,7].map((i,n)=><div key={i} style={{marginBottom:'16px'}}><div className="form-label">West Series {n+1}</div><div className="flex gap-2"><input className="form-input" placeholder="Higher seed" value={bracket.round1[i].team1} onChange={e=>setTeam(i,'team1',e.target.value)}/><input className="form-input" placeholder="Lower seed" value={bracket.round1[i].team2} onChange={e=>setTeam(i,'team2',e.target.value)}/></div></div>)}</div>
+      </div>
+      <div className="card mb-3">
+        <div className="card-title">Round 2 Matchups <span style={{fontSize:'0.72rem',fontWeight:400,color:'var(--text3)',marginLeft:6}}>— set these once R1 is complete (overrides auto-calculation)</span></div>
+        <div className="grid-2">
+          <div><div className="form-label" style={{marginBottom:8,color:'var(--text2)'}}>Eastern Conference</div>{[0,1].map(i=><div key={i} style={{marginBottom:'14px'}}><div className="form-label">East R2 Series {i+1}</div><div className="flex gap-2"><input className="form-input" placeholder="Team 1" value={(bracket.round2||DEFAULT_ROUND2)[i].team1} onChange={e=>setR2Team(i,'team1',e.target.value)}/><input className="form-input" placeholder="Team 2" value={(bracket.round2||DEFAULT_ROUND2)[i].team2} onChange={e=>setR2Team(i,'team2',e.target.value)}/></div></div>)}</div>
+          <div><div className="form-label" style={{marginBottom:8,color:'var(--text2)'}}>Western Conference</div>{[2,3].map(i=><div key={i} style={{marginBottom:'14px'}}><div className="form-label">West R2 Series {i-1}</div><div className="flex gap-2"><input className="form-input" placeholder="Team 1" value={(bracket.round2||DEFAULT_ROUND2)[i].team1} onChange={e=>setR2Team(i,'team1',e.target.value)}/><input className="form-input" placeholder="Team 2" value={(bracket.round2||DEFAULT_ROUND2)[i].team2} onChange={e=>setR2Team(i,'team2',e.target.value)}/></div></div>)}</div>
+        </div>
       </div>
       <div style={{textAlign:'right'}}><button className="btn btn-gold" onClick={handleSave} disabled={saving}>{saving?'Saving…':'💾 Save Bracket'}</button></div>
     </div>
