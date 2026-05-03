@@ -943,7 +943,7 @@ function pickRandom4(){
 }
 
 // ── POOL HERO ──
-function PoolHero({user,myEntry,scored,bracket,onGoToPicks}){
+function PoolHero({user,myEntry,scored,bracket,onGoToPicks,onRepickR2}){
   const pickerCount=scored.filter(u=>u.picks).length;
   const r=myEntry?.rank;
   const suffix=r===1?'st':r===2?'nd':r===3?'rd':'th';
@@ -960,6 +960,11 @@ function PoolHero({user,myEntry,scored,bracket,onGoToPicks}){
       {rankText&&<div className="pool-hero-meta">{rankText}</div>}
       {!user.picks&&bracket.status==='open'&&(
         <button className="btn btn-ghost btn-sm" style={{marginTop:16,position:'relative',zIndex:2,borderColor:'rgba(255,255,255,0.2)',color:'rgba(255,255,255,0.7)'}} onClick={onGoToPicks}>Make Your Picks →</button>
+      )}
+      {bracket.status==='open_r2'&&!user.is_admin&&(
+        <button onClick={onRepickR2} style={{marginTop:24,position:'relative',zIndex:2,padding:'16px 48px',fontSize:'1.1rem',fontWeight:800,borderRadius:14,background:'var(--purple)',color:'#fff',border:'none',cursor:'pointer',letterSpacing:'0.5px',boxShadow:'0 4px 32px rgba(124,92,252,0.5)',fontFamily:'inherit'}}>
+          ✏️ Repick Round 2+
+        </button>
       )}
     </div>
   );
@@ -1096,7 +1101,7 @@ function PoolView({user,data,onRefresh,onGoToPicks,onRepickR2}){
 
   return(
     <>
-    <PoolHero user={user} myEntry={myEntry} scored={scored} bracket={bracket} onGoToPicks={onGoToPicks}/>
+    <PoolHero user={user} myEntry={myEntry} scored={scored} bracket={bracket} onGoToPicks={onGoToPicks} onRepickR2={onRepickR2}/>
     <div className="page">
       <LiveBracket season={bracket.season}/>
       <div className="hero-card">
@@ -1110,18 +1115,7 @@ function PoolView({user,data,onRefresh,onGoToPicks,onRepickR2}){
       </div>
 
 
-      {bracket.status==='open_r2'&&!user.is_admin&&(
-        <div style={{background:'linear-gradient(135deg,rgba(124,92,252,0.15),rgba(124,92,252,0.05))',border:'1px solid rgba(124,92,252,0.3)',borderRadius:14,padding:'20px 24px',marginBottom:20,display:'flex',alignItems:'center',justifyContent:'space-between',gap:16,flexWrap:'wrap'}}>
-          <div>
-            <div style={{fontWeight:700,fontSize:'0.95rem',color:'var(--text)',marginBottom:4}}>Round 2 picks are open</div>
-            <div style={{fontSize:'0.78rem',color:'var(--text3)'}}>R1 points are locked in — update your Round 2+ picks now.</div>
-          </div>
-          <button className="btn btn-primary" onClick={onRepickR2} style={{whiteSpace:'nowrap',fontWeight:700,padding:'12px 28px'}}>
-            ✏️ Repick Round 2+
-          </button>
-        </div>
-      )}
-      <div className="card mb-3">
+<div className="card mb-3">
         <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
           <div className="card-title" style={{marginBottom:0}}>Standings</div>
           {maxAvail>0&&<div className="text-xs text-dim2">Available so far: <strong style={{color:'var(--text2)'}}>{maxAvail} pts</strong></div>}
