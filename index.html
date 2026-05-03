@@ -455,12 +455,13 @@ function r2Teams(picks, r1cfg, r2cfg) {
   if(r2cfg?.some(s=>s.team1||s.team2)){
     return r2cfg.map(s=>({...s,team1:s.team1||'TBD',team2:s.team2||'TBD'}));
   }
+  // NHL reseeds sequentially: top pair (0,1) vs bottom pair (2,3) within each conf
   const pw = i => picks?.r1?.[i]?.winner || (r1cfg[i]?.team1 && r1cfg[i]?.team2 ? `${r1cfg[i].team1} / ${r1cfg[i].team2}` : 'TBD');
   return [
-    {team1:pw(0),team2:pw(3),conf:'East',label:'East R2 – Series 1'},
-    {team1:pw(1),team2:pw(2),conf:'East',label:'East R2 – Series 2'},
-    {team1:pw(4),team2:pw(7),conf:'West',label:'West R2 – Series 1'},
-    {team1:pw(5),team2:pw(6),conf:'West',label:'West R2 – Series 2'},
+    {team1:pw(0),team2:pw(1),conf:'East',label:'East R2 – Series 1'},
+    {team1:pw(2),team2:pw(3),conf:'East',label:'East R2 – Series 2'},
+    {team1:pw(4),team2:pw(5),conf:'West',label:'West R2 – Series 1'},
+    {team1:pw(6),team2:pw(7),conf:'West',label:'West R2 – Series 2'},
   ];
 }
 function r3Teams(picks) {
@@ -474,7 +475,7 @@ function r4Teams(picks) {
 function actualR2(br){
   if(br.round2?.some(s=>s.team1||s.team2)) return br.round2.map(s=>({...s,team1:s.team1||'TBD',team2:s.team2||'TBD'}));
   const rw=i=>br.results.r1[i]?.winner||`R1 Winner ${i+1}`;
-  return[{team1:rw(0),team2:rw(3),label:'East R2 S1'},{team1:rw(1),team2:rw(2),label:'East R2 S2'},{team1:rw(4),team2:rw(7),label:'West R2 S1'},{team1:rw(5),team2:rw(6),label:'West R2 S2'}];
+  return[{team1:rw(0),team2:rw(1),label:'East R2 S1'},{team1:rw(2),team2:rw(3),label:'East R2 S2'},{team1:rw(4),team2:rw(5),label:'West R2 S1'},{team1:rw(6),team2:rw(7),label:'West R2 S2'}];
 }
 function actualR3(br){ const rw=i=>br.results.r2[i]?.winner||`R2 Winner ${i+1}`; return[{team1:rw(0),team2:rw(1),label:'East Conf Final'},{team1:rw(2),team2:rw(3),label:'West Conf Final'}];}
 function actualR4(br){ const rw=i=>br.results.r3[i]?.winner||(i===0?'East Champ':'West Champ'); return[{team1:rw(0),team2:rw(1),label:'Stanley Cup Final'}];}
