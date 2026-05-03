@@ -341,14 +341,15 @@ async function dbLoadAll(poolId) {
       season:  config.season  || '2025',
       status:  config.status  || 'setup',
       round1:  (config.round1?.length === 8) ? config.round1 : DEFAULT_ROUND1,
-      round2:  (config.round2?.length === 4) ? config.round2 : DEFAULT_ROUND2,
-      results: config.results?.r1 ? config.results : DEFAULT_RESULTS,
+      round2:  (config.results?._r2?.length === 4) ? config.results._r2 : DEFAULT_ROUND2,
+      results: (()=>{ const r={...( config.results?.r1 ? config.results : DEFAULT_RESULTS )}; delete r._r2; return r; })(),
     }
   };
 }
 
 async function dbSaveConfig(bracket, poolId) {
-  const payload = { pool_id:poolId, season:bracket.season, status:bracket.status, round1:bracket.round1, round2:bracket.round2, results:bracket.results, updated_at:new Date().toISOString() };
+  // round2 config is stored inside results._r2 (no separate DB column needed)
+  const payload = { pool_id:poolId, season:bracket.season, status:bracket.status, round1:bracket.round1, results:{...bracket.results, _r2:bracket.round2}, updated_at:new Date().toISOString() };
   // Row is guaranteed to exist (created in dbLoadAll on first visit), so UPDATE is safe
   const { error } = await sb.from('pool_config').update(payload).eq('pool_id', poolId);
   if (error) throw error;
