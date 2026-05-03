@@ -1934,6 +1934,7 @@ function App(){
   const [currentPool,setCurrentPool]=useState(null);
   const [currentUser,setCurrentUser]=useState(null);
   const [view,setView]=useState('pool');
+  const [startWizardR2, setStartWizardR2] = useState(false);
 
   async function loadData(poolId){
     try{
@@ -1994,7 +1995,6 @@ function App(){
 
   const liveUser = data?.users?.find(u=>u.id===currentUser.id) || currentUser;
   const needsPicks = !liveUser.picks && data?.bracket?.status === 'open';
-  const [startWizardR2, setStartWizardR2] = useState(false);
 
   function handleRepickR2(){ setStartWizardR2(true); setView('picks'); }
 
